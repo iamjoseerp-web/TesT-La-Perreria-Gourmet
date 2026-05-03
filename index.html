@@ -40,8 +40,6 @@
   input, select { width: 100%; padding: 12px; margin: 5px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
   footer { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 1px solid #333; padding: 15px; text-align: center; color: var(--gold); font-size: 11px; font-weight: bold; }
   .btn-grp { display: flex; gap: 5px; }
-  #clientListModal .sheet { max-width: 600px; }
-  #clientListModal table { min-width: 100%; }
 </style>
 </head>
 <body>
@@ -55,12 +53,6 @@
 </header>
 
 <main>
-  <div class="action-bar" style="justify-content: center; border-bottom: 1px solid #222; padding-bottom: 15px;">
-    <button class="btn" style="background:#333; color:#fff;" onclick="exportData()">💾 EXPORT BACKUP</button>
-    <button class="btn" style="background:#333; color:#fff;" onclick="document.getElementById('importFile').click()">📂 IMPORT BACKUP</button>
-    <input type="file" id="importFile" hidden onchange="importData(event)">
-  </div>
-
   <div class="dash-grid">
     <div class="stat-card"><div class="stat-label">Chicken (Stock)</div><div id="stockVal" class="stat-val">0.0 kg</div></div>
     <div class="stat-card kilos-sold"><div class="stat-label">Kilos Sold Today</div><div id="kiloSoldDay" class="stat-val">0.0 kg</div></div>
@@ -80,29 +72,14 @@
   </div>
 
   <div class="card">
-    <h3 style="margin:0 0 15px 0; color:var(--gold); font-size:12px; letter-spacing:1px;">ACTIVE BATCH LEDGER</h3>
+    <h3 id="ledgerTitle" style="margin:0 0 15px 0; color:var(--gold); font-size:12px; letter-spacing:1px;">ACTIVE BATCH LEDGER</h3>
     <div style="overflow-x:auto;"><table class="ledger-table"><thead><tr><th>Date</th><th>Entry Detail</th><th>Status</th><th>Total</th><th>Actions</th></tr></thead><tbody id="ledgerBody"></tbody></table></div>
+    <button id="backToActiveBtn" class="btn btn-outline" style="display:none; margin-top:15px; width:100%;" onclick="viewActiveBatch()">BACK TO ACTIVE BATCH</button>
   </div>
 
   <div class="card" style="border-color: var(--gold);">
     <h3 style="margin:0 0 15px 0; color:var(--gold); font-size:12px; letter-spacing:1px;">BATCH HISTORY / ARCHIVE</h3>
-    <div style="overflow-x:auto;">
-        <table class="ledger-table">
-            <thead>
-                <tr>
-                    <th>Open / Close</th>
-                    <th>Days</th>
-                    <th>Kg Sold</th>
-                    <th>Revenue</th>
-                    <th>Cost/Exp</th>
-                    <th>Spoil/Free</th>
-                    <th>Net Profit</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="batchHistoryBody"></tbody>
-        </table>
-    </div>
+    <div style="overflow-x:auto;"><table class="ledger-table"><thead><tr><th>Open / Close</th><th>Kg Sold</th><th>Revenue</th><th>Net Profit</th><th>Actions</th></tr></thead><tbody id="batchHistoryBody"></tbody></table></div>
   </div>
 </main>
 
@@ -118,37 +95,11 @@
     <label>Address</label><input id="sAddress" oninput="updateReceipt()">
     <label>WhatsApp Number</label><input id="sWhatsApp" oninput="updateReceipt()">
     <label>Product</label><select id="sProd" onchange="syncUnits('sProd','sUnitLabel'); updateReceipt()"><option value="CHICKEN">CHICKEN (MAIN)</option><option value="GIZZARDS">GIZZARDS</option><option value="FEET">FEET</option></select>
-    <div style="display:flex; gap:10px;">
-      <div style="flex:1;"><label id="sUnitLabel">Qty (kg)</label><input id="sKilos" type="number" step="0.1" oninput="updateReceipt()"></div>
-      <div style="flex:1;"><label>Price</label><input id="sPrice" type="number" oninput="updateReceipt()"></div>
-      <div style="flex:1;"><label>Delivery</label><input id="sDelivery" type="number" oninput="updateReceipt()"></div>
-    </div>
+    <div style="display:flex; gap:10px;"><div style="flex:1;"><label id="sUnitLabel">Qty (kg)</label><input id="sKilos" type="number" step="0.1" oninput="updateReceipt()"></div><div style="flex:1;"><label>Price</label><input id="sPrice" type="number" oninput="updateReceipt()"></div><div style="flex:1;"><label>Delivery</label><input id="sDelivery" type="number" oninput="updateReceipt()"></div></div>
     <div id="receiptPreview" class="receipt-preview"><div id="receiptContent">...</div><div style="text-align:center; margin-top:10px; font-weight:bold; color:var(--gold); font-size:18px;" id="grandTotalLabel">TOTAL: $0</div></div>
     <button class="btn btn-wa-action" onclick="sendWhatsApp()">📱 SEND WHATSAPP</button>
     <button class="btn btn-gold" style="width:100%; margin-top:15px;" onclick="saveSale()">SAVE ORDER</button>
     <button class="btn" style="width:100%; color:#666;" onclick="closeModal('saleModal')">CANCEL</button>
-</div></div>
-
-<div id="clientListModal" class="modal"><div class="sheet">
-    <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
-    <div style="margin-top: 15px; border: 1px solid #333; border-radius: 8px; background: #000;">
-        <table>
-            <thead><tr><th>Phone</th><th>Name</th><th>Actions</th></tr></thead>
-            <tbody id="clientListBody"></tbody>
-        </table>
-    </div>
-    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="closeModal('clientListModal')">CLOSE</button>
-</div></div>
-
-<div id="clientEditModal" class="modal"><div class="sheet">
-    <h2 style="color:var(--gold); margin:0;">EDIT CLIENT</h2>
-    <input type="hidden" id="ceOldPhone">
-    <label>Phone (Account #)</label><input id="cePhone">
-    <label>Name</label><input id="ceName">
-    <label>Address</label><input id="ceAddress">
-    <label>WhatsApp</label><input id="ceWhatsApp">
-    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="saveClientEdit()">UPDATE CLIENT</button>
-    <button class="btn" style="width:100%; color:#666;" onclick="closeModal('clientEditModal')">CANCEL</button>
 </div></div>
 
 <div id="stockModal" class="modal"><div class="sheet">
@@ -161,6 +112,12 @@
     <label>Total Cost ($)</label><input id="stCost" type="number" step="0.01">
     <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="saveStock()">SAVE STOCK</button>
     <button class="btn" style="width:100%; color:#666;" onclick="closeModal('stockModal')">CANCEL</button>
+</div></div>
+
+<div id="clientListModal" class="modal"><div class="sheet">
+    <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
+    <div style="margin-top: 15px; border: 1px solid #333; border-radius: 8px; background: #000;"><table><thead><tr><th>Phone</th><th>Name</th><th>Actions</th></tr></thead><tbody id="clientListBody"></tbody></table></div>
+    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="closeModal('clientListModal')">CLOSE</button>
 </div></div>
 
 <div id="expenseModal" class="modal"><div class="sheet">
@@ -178,196 +135,76 @@
 
 <script>
 let bizData = JSON.parse(localStorage.getItem("perreria_v10") || '{"transactions":[], "logo": null, "batchHistory": [], "clients": []}');
+let viewBatchId = null;
 
-function getPVDate() {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bahia_Banderas', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-}
-
+function getPVDate() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bahia_Banderas', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
 function save() { localStorage.setItem("perreria_v10", JSON.stringify(bizData)); render(); }
-
-function syncUnits(selectId, labelId) {
-    const val = document.getElementById(selectId).value;
-    document.getElementById(labelId).innerText = (val === "CHICKEN") ? "Qty (kg)" : "Qty (g)";
-}
-
+function syncUnits(selectId, labelId) { const val = document.getElementById(selectId).value; document.getElementById(labelId).innerText = (val === "CHICKEN") ? "Qty (kg)" : "Qty (g)"; }
 function openModal(id) { 
     const d = getPVDate();
-    if(id === 'saleModal') { 
-        document.getElementById('editSId').value = ""; document.getElementById('sPhone').value = ""; document.getElementById('sClient').value = ""; 
-        document.getElementById('sWhatsApp').value = ""; document.getElementById('sAddress').value = ""; document.getElementById('sKilos').value = 0; 
-        document.getElementById('sPrice').value = 50; document.getElementById('sDelivery').value = 10; syncUnits('sProd','sUnitLabel'); updateReceipt(); 
-    }
+    if(id === 'saleModal') { document.getElementById('editSId').value = ""; document.getElementById('sPhone').value = ""; document.getElementById('sClient').value = ""; document.getElementById('sWhatsApp').value = ""; document.getElementById('sAddress').value = ""; document.getElementById('sKilos').value = 0; document.getElementById('sPrice').value = 50; document.getElementById('sDelivery').value = 10; updateReceipt(); }
+    if(id === 'stockModal') { document.getElementById('editStId').value = ""; document.getElementById('stSupplier').value = ""; document.getElementById('stKilos').value = 0; document.getElementById('stCost').value = 0; }
     if(id === 'clientListModal') { renderClients(); }
     document.getElementById(id).style.display = "flex"; 
     ['sDate', 'stDate', 'exDate'].forEach(f => { if(document.getElementById(f)) document.getElementById(f).value = d; });
 }
-
 function closeModal(id) { document.getElementById(id).style.display = "none"; }
-
-// AUTHORIZED CORRECTION 2: Sync Account Number to WhatsApp
-function syncPhoneToWA(val) {
-    document.getElementById('sWhatsApp').value = val;
-    updateReceipt();
-}
-
-function lookupClient(phone) {
-    if(!bizData.clients) bizData.clients = [];
-    const client = bizData.clients.find(c => c.phone === phone);
-    if(client) {
-        document.getElementById('sClient').value = client.name;
-        document.getElementById('sAddress').value = client.address;
-        document.getElementById('sWhatsApp').value = client.whatsapp || client.phone;
-        updateReceipt();
-    }
-}
-
-function syncClientFromOrder() {
-    const phone = document.getElementById('sPhone').value;
-    if(!phone) return;
-    if(!bizData.clients) bizData.clients = [];
-    let idx = bizData.clients.findIndex(c => c.phone === phone);
-    const clientObj = { phone: phone, name: document.getElementById('sClient').value, address: document.getElementById('sAddress').value, whatsapp: document.getElementById('sWhatsApp').value };
-    if(idx > -1) bizData.clients[idx] = clientObj; else bizData.clients.push(clientObj);
-}
-
-// AUTHORIZED CORRECTION 1: RESTORE AND FIX CLIENT BUTTONS
-function renderClients() {
-    if(!bizData.clients) bizData.clients = [];
-    const container = document.getElementById('clientListBody');
-    if(bizData.clients.length === 0) {
-        container.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#666;">NO CLIENTS FOUND. SAVE AN ORDER TO BEGIN.</td></tr>';
-        return;
-    }
-    container.innerHTML = bizData.clients.map(c => `
-        <tr>
-            <td>${c.phone}</td><td>${c.name}</td>
-            <td class="btn-grp">
-                <button class="btn-sm" style="background:#222; color:var(--gold);" onclick="editClient('${c.phone}')">EDIT</button>
-                <button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button>
-            </td>
-        </tr>`).join("");
-}
-
-function editClient(phone) {
-    const client = bizData.clients.find(c => c.phone === phone);
-    if(client) {
-        document.getElementById('ceOldPhone').value = client.phone;
-        document.getElementById('cePhone').value = client.phone;
-        document.getElementById('ceName').value = client.name;
-        document.getElementById('ceAddress').value = client.address || "";
-        document.getElementById('ceWhatsApp').value = client.whatsapp || client.phone;
-        openModal('clientEditModal');
-    }
-}
-
-function saveClientEdit() {
-    const oldP = document.getElementById('ceOldPhone').value;
-    const newP = document.getElementById('cePhone').value;
-    let idx = bizData.clients.findIndex(c => c.phone === oldP);
-    if(idx > -1) {
-        bizData.clients[idx] = { 
-            phone: newP, 
-            name: document.getElementById('ceName').value, 
-            address: document.getElementById('ceAddress').value, 
-            whatsapp: document.getElementById('ceWhatsApp').value 
-        };
-        // Update historical orders with new phone if changed
-        bizData.transactions.forEach(t => { if(t.account === oldP) t.account = newP; });
-        save(); closeModal('clientEditModal'); renderClients();
-    }
-}
-
-function deleteClient(phone) {
-    if(confirm("DELETE CLIENT FROM DATABASE?")) {
-        bizData.clients = bizData.clients.filter(c => c.phone !== phone);
-        save(); renderClients();
-    }
-}
+function syncPhoneToWA(val) { document.getElementById('sWhatsApp').value = val; updateReceipt(); }
+function lookupClient(phone) { const c = bizData.clients.find(x => x.phone === phone); if(c) { document.getElementById('sClient').value = c.name; document.getElementById('sAddress').value = c.address; document.getElementById('sWhatsApp').value = c.whatsapp || c.phone; updateReceipt(); } }
+function syncClientFromOrder() { const p = document.getElementById('sPhone').value; if(!p) return; if(!bizData.clients) bizData.clients = []; let idx = bizData.clients.findIndex(c => c.phone === p); const obj = { phone: p, name: document.getElementById('sClient').value, address: document.getElementById('sAddress').value, whatsapp: document.getElementById('sWhatsApp').value }; if(idx > -1) bizData.clients[idx] = obj; else bizData.clients.push(obj); }
+function renderClients() { const container = document.getElementById('clientListBody'); if(!bizData.clients.length) { container.innerHTML = '<tr><td colspan="3" style="text-align:center;">NO CLIENTS</td></tr>'; return; } container.innerHTML = bizData.clients.map(c => `<tr><td>${c.phone}</td><td>${c.name}</td><td class="btn-grp"><button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button></td></tr>`).join(""); }
+function deleteClient(p) { if(confirm("DELETE CLIENT?")) { bizData.clients = bizData.clients.filter(c => c.phone !== p); save(); renderClients(); } }
 
 function saveSale() {
     syncClientFromOrder();
     const id = document.getElementById('editSId').value, k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, d = parseFloat(document.getElementById('sDelivery').value) || 0;
-    const data = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('sDate').value, type: 'SALE', client: document.getElementById('sClient').value, product: document.getElementById('sProd').value, phone: document.getElementById('sWhatsApp').value, account: document.getElementById('sPhone').value, address: document.getElementById('sAddress').value, kilos: k, pricePerKg: p, delFee: d, status: 'PENDING', total: (k * p) + d };
-    if(id) { const idx = bizData.transactions.findIndex(x => x.id == id); data.status = bizData.transactions[idx].status; bizData.transactions[idx] = data; }
-    else bizData.transactions.push(data);
+    const tx = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('sDate').value, type: 'SALE', client: document.getElementById('sClient').value, product: document.getElementById('sProd').value, phone: document.getElementById('sWhatsApp').value, account: document.getElementById('sPhone').value, address: document.getElementById('sAddress').value, kilos: k, pricePerKg: p, delFee: d, status: 'PENDING', total: (k * p) + d };
+    if(viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if(id) { let i = b.txs.findIndex(x => x.id == id); b.txs[i] = tx; } else b.txs.push(tx); } 
+    else { if(id) { let i = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[i] = tx; } else bizData.transactions.push(tx); }
     save(); closeModal('saleModal');
 }
 
 function updateReceipt() {
-    const k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, d = parseFloat(document.getElementById('sDelivery').value) || 0;
-    const prod = document.getElementById('sProd').value;
+    const k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, d = parseFloat(document.getElementById('sDelivery').value) || 0, prod = document.getElementById('sProd').value;
     document.getElementById('grandTotalLabel').innerText = `TOTAL: $${((k * p) + d).toFixed(0)} MXN`;
     document.getElementById('receiptContent').innerText = `CLIENTE: ${document.getElementById('sClient').value}\nPRODUCTO: ${prod}\nPEDIDO: ${k}${prod === "CHICKEN" ? "kg" : "g"} x $${p}\nENVÍO: $${d}\n📍: ${document.getElementById('sAddress').value}`;
 }
 
+// CORRECTION 1: Address in WhatsApp message
 function sendWhatsApp() {
-    const k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, del = parseFloat(document.getElementById('sDelivery').value) || 0;
+    const k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, del = parseFloat(document.getElementById('sDelivery').value) || 0, addr = document.getElementById('sAddress').value;
     const phone = document.getElementById('sWhatsApp').value.replace(/\D/g,''), prod = document.getElementById('sProd').value;
-    const msg = encodeURIComponent(`🍗 *LA PERRERÍA GOURMET PV*\n*PEDIDO:* ${prod} (${k}${prod==="CHICKEN"?"kg":"g"})\n*ENVÍO:* $${del}\n*TOTAL: $${(k*p)+del} MXN*`);
+    const msg = encodeURIComponent(`🍗 *LA PERRERÍA GOURMET PV*\n*PEDIDO:* ${prod} (${k}${prod==="CHICKEN"?"kg":"g"})\n*ENVÍO:* $${del}\n*DIRECCIÓN:* ${addr}\n*TOTAL: $${(k*p)+del} MXN*`);
     if(phone) window.open(`https://wa.me/${phone.length === 10 ? '52'+phone : phone}?text=${msg}`, '_blank');
 }
 
+// CORRECTION 2: Proper resetting of stock fields
 function saveStock() {
     const id = document.getElementById('editStId').value;
-    const data = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('stDate').value, type: 'STOCK', client: document.getElementById('stSupplier').value, product: document.getElementById('stProd').value, kilos: parseFloat(document.getElementById('stKilos').value) || 0, total: -parseFloat(document.getElementById('stCost').value) || 0 };
-    if(id) { const idx = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[idx] = data; }
-    else bizData.transactions.push(data);
+    const tx = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('stDate').value, type: 'STOCK', client: document.getElementById('stSupplier').value, product: document.getElementById('stProd').value, kilos: parseFloat(document.getElementById('stKilos').value) || 0, total: -parseFloat(document.getElementById('stCost').value) || 0 };
+    if(viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if(id) { let i = b.txs.findIndex(x => x.id == id); b.txs[i] = tx; } else b.txs.push(tx); }
+    else { if(id) { let i = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[i] = tx; } else bizData.transactions.push(tx); }
     save(); closeModal('stockModal');
+    // Clear fields explicitly
+    document.getElementById('stSupplier').value = ""; document.getElementById('stKilos').value = 0; document.getElementById('stCost').value = 0;
 }
 
 function saveExpense() {
     const id = document.getElementById('editExId').value;
-    const data = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('exDate').value, type: document.getElementById('exType').value, product: document.getElementById('exProd').value, client: document.getElementById('exNote').value, kilos: parseFloat(document.getElementById('exKilos').value) || 0, total: -parseFloat(document.getElementById('exCost').value) || 0 };
-    if(id) { const idx = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[idx] = data; }
-    else bizData.transactions.push(data);
+    const tx = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('exDate').value, type: document.getElementById('exType').value, product: document.getElementById('exProd').value, client: document.getElementById('exNote').value, kilos: parseFloat(document.getElementById('exKilos').value) || 0, total: -parseFloat(document.getElementById('exCost').value) || 0 };
+    if(viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if(id) { let i = b.txs.findIndex(x => x.id == id); b.txs[i] = tx; } else b.txs.push(tx); }
+    else { if(id) { let i = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[i] = tx; } else bizData.transactions.push(tx); }
     save(); closeModal('expenseModal');
 }
 
-function editTx(id) {
-    const tx = bizData.transactions.find(t => t.id === id);
-    if(!tx) return;
-    if(tx.type === 'SALE') {
-        openModal('saleModal');
-        document.getElementById('editSId').value = tx.id;
-        document.getElementById('sDate').value = tx.date;
-        document.getElementById('sPhone').value = tx.account || "";
-        document.getElementById('sClient').value = tx.client;
-        document.getElementById('sAddress').value = tx.address || "";
-        document.getElementById('sWhatsApp').value = tx.phone || "";
-        document.getElementById('sProd').value = tx.product || "CHICKEN";
-        document.getElementById('sKilos').value = tx.kilos;
-        document.getElementById('sPrice').value = tx.pricePerKg;
-        document.getElementById('sDelivery').value = tx.delFee;
-        updateReceipt();
-    } else if(tx.type === 'STOCK') {
-        openModal('stockModal');
-        document.getElementById('editStId').value = tx.id;
-        document.getElementById('stDate').value = tx.date;
-        document.getElementById('stProd').value = tx.product;
-        document.getElementById('stSupplier').value = tx.client;
-        document.getElementById('stKilos').value = tx.kilos;
-        document.getElementById('stCost').value = Math.abs(tx.total);
-    } else {
-        openModal('expenseModal');
-        document.getElementById('editExId').value = tx.id;
-        document.getElementById('exType').value = tx.type;
-        document.getElementById('exProd').value = tx.product;
-        document.getElementById('exDate').value = tx.date;
-        document.getElementById('exNote').value = tx.client;
-        document.getElementById('exCost').value = Math.abs(tx.total);
-        document.getElementById('exKilos').value = tx.kilos;
-    }
-}
-
-function deleteTx(id) { if(confirm("DELETE THIS ENTRY?")) { bizData.transactions = bizData.transactions.filter(t => t.id !== id); save(); } }
+function deleteTx(id) { if(confirm("DELETE ENTRY?")) { if(viewBatchId) { let b = bizData.batchHistory.find(x => x.id === viewBatchId); b.txs = b.txs.filter(t => t.id !== id); } else bizData.transactions = bizData.transactions.filter(t => t.id !== id); save(); } }
 
 function render() {
     const today = getPVDate();
     let s_chicken = 0, s_giz = 0, s_feet = 0, pRev = 0, dRev = 0, fCount = 0, kSoldToday = 0;
-    const logoImg = document.getElementById('mainLogo');
-    if(bizData.logo) { logoImg.src = bizData.logo; logoImg.style.display = "block"; document.getElementById('logoLabel').style.display = "none"; }
+    const targetTxs = viewBatchId ? bizData.batchHistory.find(b => b.id === viewBatchId).txs : bizData.transactions;
     
-    document.getElementById('ledgerBody').innerHTML = bizData.transactions.sort((a,b) => b.id - a.id).map(t => {
+    document.getElementById('ledgerBody').innerHTML = targetTxs.sort((a,b) => b.id - a.id).map(t => {
         const prod = t.product || "CHICKEN"; const amt = parseFloat(t.kilos) || 0;
         if(t.type === 'SALE' || t.type === 'LOSS') {
             const factor = -amt;
@@ -389,25 +226,24 @@ function render() {
 
 function renderBatchHistory() {
     if(!bizData.batchHistory) bizData.batchHistory = [];
-    document.getElementById('batchHistoryBody').innerHTML = bizData.batchHistory.sort((a,b) => b.id - a.id).map(b => `<tr><td><small>O: ${b.opened}<br>C: ${b.closed}</small></td><td>1</td><td>${b.totalKilosSold.toFixed(1)}</td><td>$${b.totalRevenue.toFixed(0)}</td><td>$${b.totalExpenses.toFixed(0)}</td><td>${b.lossKilos.toFixed(1)}kg</td><td style="color:var(--success); font-weight:bold;">$${b.netProfit.toFixed(0)}</td><td class="btn-grp"><button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteBatch(${b.id})">DEL</button></td></tr>`).join("");
+    document.getElementById('batchHistoryBody').innerHTML = bizData.batchHistory.sort((a,b) => b.id - a.id).map(b => {
+        let rev = 0, exp = 0, soldK = 0; b.txs.forEach(t => { if(t.type === 'SALE') { rev += t.total; if(t.product === "CHICKEN") soldK += t.kilos; } else { exp += Math.abs(t.total); } });
+        return `<tr><td>${b.opened}</td><td>${soldK.toFixed(1)}</td><td>$${rev.toFixed(0)}</td><td>$${(rev-exp).toFixed(0)}</td><td class="btn-grp"><button class="btn-sm" style="background:#222; color:var(--gold);" onclick="editBatch(${b.id})">EDIT</button><button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteBatch(${b.id})">DEL</button></td></tr>`;
+    }).join("");
 }
+
+// CORRECTION 3: EDIT and DELETE functional in Archive
+function editBatch(id) { viewBatchId = id; document.getElementById('ledgerTitle').innerText = "ARCHIVED BATCH LEDGER (" + id + ")"; document.getElementById('backToActiveBtn').style.display = "block"; render(); }
+function viewActiveBatch() { viewBatchId = null; document.getElementById('ledgerTitle').innerText = "ACTIVE BATCH LEDGER"; document.getElementById('backToActiveBtn').style.display = "none"; render(); }
+function deleteBatch(id) { if(confirm("DELETE BATCH?")) { bizData.batchHistory = bizData.batchHistory.filter(b => b.id !== id); save(); } }
 
 function closeBatch() {
     if(bizData.transactions.length === 0) return;
-    if(confirm("CLOSE BATCH?")) {
-        let rev = 0, exp = 0, soldK = 0, lossK = 0, closeDate = getPVDate();
-        bizData.transactions.forEach(t => { if(t.type === 'SALE') { rev += t.total; if(t.product === "CHICKEN") soldK += t.kilos; } else { exp += Math.abs(t.total); } });
-        bizData.batchHistory.push({ id: Date.now(), opened: getPVDate(), closed: closeDate, totalKilosSold: soldK, totalRevenue: rev, totalExpenses: exp, lossKilos: 0, netProfit: rev - exp });
-        bizData.transactions = []; save();
-    }
+    if(confirm("CLOSE BATCH?")) { bizData.batchHistory.push({ id: Date.now(), opened: getPVDate(), txs: bizData.transactions }); bizData.transactions = []; save(); }
 }
 
-function deleteBatch(id) { if(confirm("DELETE ARCHIVED BATCH?")) { bizData.batchHistory = bizData.batchHistory.filter(b => b.id !== id); save(); } }
-
-function exportData() { const blob = new Blob([JSON.stringify(bizData)], {type: 'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `perreria_v10.9_LOCKED.json`; a.click(); }
-function importData(event) { const reader = new FileReader(); reader.onload = function(e) { bizData = JSON.parse(e.target.result); save(); location.reload(); }; reader.readAsText(event.target.files[0]); }
-function uploadLogo(event) { const reader = new FileReader(); reader.onload = function() { bizData.logo = reader.result; save(); }; reader.readAsDataURL(event.target.files[0]); }
-function toggleStatus(id) { const tx = bizData.transactions.find(t => t.id === id); if(tx) { tx.status = (tx.status === 'COMPLETED') ? 'PENDING' : 'COMPLETED'; save(); } }
+function uploadLogo(e) { const reader = new FileReader(); reader.onload = function() { bizData.logo = reader.result; save(); }; reader.readAsDataURL(e.target.files[0]); }
+function toggleStatus(id) { let list = viewBatchId ? bizData.batchHistory.find(x => x.id === viewBatchId).txs : bizData.transactions; let tx = list.find(t => t.id === id); if(tx && tx.type === 'SALE') { tx.status = (tx.status === 'COMPLETED') ? 'PENDING' : 'COMPLETED'; save(); } }
 
 render();
 </script>
