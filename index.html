@@ -1,316 +1,542 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Perrería Gourmet PV - V10.8</title>
-    <style>
-        :root { --gold: #D4AF37; --bg: #000; --card: #111; --text: #eee; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; padding-bottom: 80px; }
-        .header { text-align: center; border-bottom: 2px solid var(--gold); padding-bottom: 10px; margin-bottom: 15px; }
-        .logo-img { max-height: 80px; margin-bottom: 5px; }
-        
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 8px; border-left: 4px solid var(--gold); text-align: center; }
-        .stat-val { display: block; font-size: 20px; font-weight: bold; color: var(--gold); }
-        .stat-label { font-size: 10px; text-transform: uppercase; color: #888; }
-
-        .btn { border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
-        .btn-gold { background: var(--gold); color: #000; }
-        .btn-wa-action { background: #25D366; color: #fff; width: 100%; margin-top: 10px; }
-        .btn-sm { padding: 5px 10px; font-size: 11px; }
-        
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid #333; z-index: 100; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; overflow-y: auto; }
-        .sheet { background: #181818; width: 90%; max-width: 450px; margin: 20px auto; padding: 20px; border-radius: 12px; border: 1px solid var(--gold); }
-        
-        label { display: block; font-size: 11px; color: var(--gold); margin: 10px 0 3px; font-weight: bold; }
-        input, select { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th { text-align: left; color: var(--gold); padding: 8px; border-bottom: 1px solid #333; }
-        td { padding: 10px 8px; border-bottom: 1px solid #222; }
-        
-        .status-pending { color: #f39c12; font-weight: bold; }
-        .status-paid { color: #2ecc71; font-weight: bold; }
-        .receipt-preview { background: #fff; color: #000; padding: 15px; margin-top: 15px; font-family: monospace; border-radius: 4px; font-size: 12px; white-space: pre-wrap; }
-        .btn-grp { display: flex; gap: 5px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Perrería Gourmet PV – Version 10.8 (Client Account System)</title>
+<style>
+  :root { --gold: #d4af37; --bg: #000000; --card-bg: #111111; --text: #ffffff; --danger: #ff4444; --success: #25D366; --pending: #ffcc00; --blue: #3498db; }
+  body { margin:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 150px; }
+  header { padding:30px 20px; border-bottom: 2px solid var(--gold); background: #000; text-align: center; }
+  .logo-upload-zone { cursor: pointer; max-width: 200px; margin: auto; border: 2px dashed var(--gold); padding: 15px; border-radius: 15px; }
+  #mainLogo { max-height: 100px; max-width: 100%; display: block; margin: auto; }
+  main { padding:20px; max-width:1100px; margin:auto; }
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 25px; }
+  .stat-card { background: var(--card-bg); border: 1px solid #333; padding: 12px; border-radius: 8px; border-left: 4px solid var(--gold); }
+  .stat-card.delivery { border-left-color: var(--blue); }
+  .stat-card.free-gift { border-left-color: #555; }
+  .stat-card.kilos-sold { border-left-color: #ff8c00; }
+  .stat-label { font-size: 8px; color: var(--gold); text-transform: uppercase; font-weight: 900; }
+  .stat-val { font-size: 16px; font-weight: 700; color: #fff; margin-top: 4px; }
+  .action-bar { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+  .btn { padding: 12px 18px; border: none; border-radius: 4px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+  .btn-gold { background: var(--gold); color: #000; }
+  .btn-outline { background: transparent; border: 2px solid var(--gold); color: var(--gold); }
+  .btn-danger-action { background: #440000; color: #fff; border: 1px solid var(--danger); }
+  .btn-wa-action { background: var(--success); color: #000; width: 100%; margin-top: 15px; border-radius: 30px; font-size: 14px; font-weight: bold; }
+  .btn-sm { padding: 6px 8px; font-size: 10px; border-radius: 3px; border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+  .card { background: var(--card-bg); border: 1px solid #333; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
+  .receipt-preview { background: #000; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-top: 15px; color: #fff; font-family: monospace; font-size: 13px; white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; min-width: 650px; }
+  th { text-align: left; color: #aaa; padding: 12px; border-bottom: 1px solid #444; font-size: 10px; text-transform: uppercase; }
+  td { padding: 12px; border-bottom: 1px solid #222; font-size: 13px; }
+  .badge { padding: 6px 10px; border-radius: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; border: none; }
+  .badge-pending { background: #332b00; color: var(--pending); border: 1px solid var(--pending); cursor: pointer; }
+  .badge-done { background: #002200; color: var(--success); border: 1px solid var(--success); cursor: pointer; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+  .sheet { background: #0a0a0a; padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 450px; overflow-y: auto; max-height: 90vh; }
+  label { font-size: 10px; color: var(--gold); font-weight: 900; display: block; margin-top: 10px; text-transform: uppercase; }
+  input, select { width: 100%; padding: 12px; margin: 5px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+  footer { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 1px solid #333; padding: 15px; text-align: center; color: var(--gold); font-size: 11px; font-weight: bold; }
+  .btn-grp { display: flex; gap: 5px; }
+</style>
 </head>
 <body>
 
-<div class="header">
-    <div id="logoContainer"></div>
-    <h1 style="margin:0; font-size: 18px; color: var(--gold);">LA PERRERÍA GOURMET</h1>
-    <p style="margin:0; font-size: 10px; color: #666;">V10.8 • INVENTORY & ROLODEX</p>
-</div>
+<header>
+  <div class="logo-upload-zone" onclick="document.getElementById('logoInput').click()">
+    <img id="mainLogo" src="" style="display:none;">
+    <div id="logoLabel" style="color:var(--gold); font-size:10px; font-weight:bold;">UPLOAD BRAND LOGO</div>
+  </div>
+  <input type="file" id="logoInput" hidden accept="image/*" onchange="uploadLogo(event)">
+</header>
 
-<div class="stat-grid">
-    <div class="stat-card"><span class="stat-val" id="stockMain">0 kg</span><span class="stat-label">Chicken Stock</span></div>
-    <div class="stat-card"><span class="stat-val" id="cashRunning">$0</span><span class="stat-label">Daily Sales</span></div>
-</div>
+<main>
+  <div class="action-bar" style="justify-content: center; border-bottom: 1px solid #222; padding-bottom: 15px;">
+    <button class="btn" style="background:#333; color:#fff;" onclick="exportData()">💾 EXPORT BACKUP</button>
+    <button class="btn" style="background:#333; color:#fff;" onclick="document.getElementById('importFile').click()">📂 IMPORT BACKUP</button>
+    <input type="file" id="importFile" hidden onchange="importData(event)">
+  </div>
 
-<div style="margin-bottom:20px;">
-    <h3 style="color:var(--gold); border-bottom: 1px solid #333;">TODAY'S ORDERS</h3>
-    <table id="ledger">
-        <thead><tr><th>Client</th><th>Order</th><th>Status</th></tr></thead>
-        <tbody id="ledgerBody"></tbody>
-    </table>
-</div>
+  <div class="dash-grid">
+    <div class="stat-card"><div class="stat-label">Chicken (Stock)</div><div id="stockVal" class="stat-val">0.0 kg</div></div>
+    <div class="stat-card kilos-sold"><div class="stat-label">Kilos Sold Today</div><div id="kiloSoldDay" class="stat-val">0.0 kg</div></div>
+    <div class="stat-card"><div class="stat-label">Gizzards</div><div id="gizVal" class="stat-val">0g</div></div>
+    <div class="stat-card"><div class="stat-label">Feet</div><div id="feetVal" class="stat-val">0g</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue</div><div id="todaySales" class="stat-val">$0 MXN</div></div>
+    <div class="stat-card delivery"><div class="stat-label">Delivery</div><div id="deliverySales" class="stat-val">$0 MXN</div></div>
+    <div class="stat-card free-gift"><div class="stat-label">Free/Gifts</div><div id="freeStat" class="stat-val">0 units</div></div>
+  </div>
 
-<div class="nav-bar">
-    <button class="btn btn-gold" onclick="openSaleModal()">+ NEW ORDER</button>
-    <button class="btn" style="background:#222; color:var(--gold);" onclick="openModal('customerModal')">👥 CLIENTS</button>
-    <button class="btn" style="background:#300; color:#fff;" onclick="openModal('batchModal')">🍲 BATCH</button>
-</div>
+  <div class="action-bar">
+    <button class="btn btn-gold" onclick="openModal('saleModal')">New Order</button>
+    <button class="btn btn-outline" onclick="openModal('stockModal')">+ Stock</button>
+    <button class="btn btn-danger-action" onclick="openModal('expenseModal')">+ Expense / Loss</button>
+    <button class="btn" style="background:#ff8c00; color:#000;" onclick="openModal('clientListModal')">👥 Clients</button>
+    <button class="btn" style="background:#440000; color:var(--gold); border:1px solid var(--danger);" onclick="closeBatch()">Close Batch</button>
+  </div>
 
-<!-- CLIENT ROLODEX MODAL -->
-<div id="customerModal" class="modal"><div class="sheet">
-    <h2 style="color:var(--gold); margin:0;">CLIENT ROLODEX</h2>
-    <div id="custForm" style="margin-top:15px; border-bottom:1px solid #333; padding-bottom:15px;">
-        <input type="hidden" id="custEditId">
-        <label>Full Name</label><input id="custName">
-        <label>Phone (WhatsApp #)</label><input id="custPhone" type="tel">
-        <label>Full Address</label><input id="custAddress">
-        <button class="btn btn-gold" style="width:100%; margin-top:10px;" onclick="saveCustomerManual()">SAVE TO ROLODEX</button>
+  <div class="card">
+    <h3 style="margin:0 0 15px 0; color:var(--gold); font-size:12px; letter-spacing:1px;">ACTIVE BATCH LEDGER</h3>
+    <div style="overflow-x:auto;"><table id="ledgerTable"><thead><tr><th>Date</th><th>Entry Detail</th><th>Status</th><th>Total</th><th>Actions</th></tr></thead><tbody id="ledgerBody"></tbody></table></div>
+  </div>
+
+  <div class="card" style="border-color: var(--gold);">
+    <h3 style="margin:0 0 15px 0; color:var(--gold); font-size:12px; letter-spacing:1px;">BATCH HISTORY / ARCHIVE</h3>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Open / Close</th>
+                    <th>Days</th>
+                    <th>Kg Sold</th>
+                    <th>Revenue</th>
+                    <th>Cost/Exp</th>
+                    <th>Spoil/Free</th>
+                    <th>Net Profit</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="batchHistoryBody"></tbody>
+        </table>
     </div>
-    <div style="margin-top:15px; max-height:300px; overflow-y:auto;">
-        <table><tbody id="customerListBody"></tbody></table>
-    </div>
-    <button class="btn" style="width:100%; color:#666; margin-top:10px;" onclick="closeModal('customerModal')">CLOSE</button>
-</div></div>
+  </div>
+</main>
 
-<!-- NEW ORDER MODAL -->
+<footer>LA PERRERÍA GOURMET PV – V10.8</footer>
+
+<!-- ORDER FORM - UPDATED FOR CLIENT SYSTEM -->
 <div id="saleModal" class="modal"><div class="sheet">
     <h2 style="color:var(--gold); margin:0;">NEW ORDER</h2>
     <input type="hidden" id="editSId">
-    
     <label>Date</label><input id="sDate" type="date">
-    
-    <label>Phone / Account #</label>
-    <input id="sPhone" list="phoneOptions" oninput="autoFillByPhone(); updateReceipt()">
-    <datalist id="phoneOptions"></datalist>
-
-    <label>Client Name</label>
-    <input id="sClient" list="nameOptions" oninput="autoFillByName(); updateReceipt()">
-    <datalist id="nameOptions"></datalist>
-
-    <label>Address</label>
-    <input id="sAddress" oninput="updateReceipt()">
-
-    <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
-    
-    <label>Product</label>
-    <select id="sProd" onchange="updateReceipt()">
-        <option value="CHICKEN">CHICKEN (MAIN)</option>
-        <option value="GIZZARDS">GIZZARDS</option>
-        <option value="FEET">FEET</option>
-    </select>
-    
+    <label>Telephone (Account #)</label><input id="sPhone" oninput="lookupClient(this.value)">
+    <label>Client Name</label><input id="sClient" oninput="updateReceipt()">
+    <label>Address</label><input id="sAddress" oninput="updateReceipt()">
+    <label>WhatsApp</label><input id="sWhatsApp" oninput="updateReceipt()">
+    <label>Product</label><select id="sProd" onchange="syncUnits('sProd','sUnitLabel'); updateReceipt()"><option value="CHICKEN">CHICKEN (MAIN)</option><option value="GIZZARDS">GIZZARDS</option><option value="FEET">FEET</option></select>
     <div style="display:flex; gap:10px;">
-      <div style="flex:1;"><label>Kilos</label><input id="sKilos" type="number" step="0.1" oninput="updateReceipt()"></div>
-      <div style="flex:1;"><label>Price/Kg</label><input id="sPrice" type="number" oninput="updateReceipt()"></div>
+      <div style="flex:1;"><label id="sUnitLabel">Qty (kg)</label><input id="sKilos" type="number" step="0.1" oninput="updateReceipt()"></div>
+      <div style="flex:1;"><label>Price</label><input id="sPrice" type="number" oninput="updateReceipt()"></div>
       <div style="flex:1;"><label>Delivery</label><input id="sDelivery" type="number" oninput="updateReceipt()"></div>
     </div>
-    
-    <div id="receiptPreview" class="receipt-preview"><div id="receiptContent"></div><div id="grandTotalLabel" style="text-align:center; font-weight:bold; color:#000; border-top:1px dashed #ccc; margin-top:5px; padding-top:5px;">TOTAL: $0</div></div>
-    
+    <div id="receiptPreview" class="receipt-preview"><div id="receiptContent">...</div><div style="text-align:center; margin-top:10px; font-weight:bold; color:var(--gold); font-size:18px;" id="grandTotalLabel">TOTAL: $0</div></div>
     <button class="btn btn-wa-action" onclick="sendWhatsApp()">📱 SEND WHATSAPP</button>
     <button class="btn btn-gold" style="width:100%; margin-top:15px;" onclick="saveSale()">SAVE ORDER</button>
     <button class="btn" style="width:100%; color:#666;" onclick="closeModal('saleModal')">CANCEL</button>
 </div></div>
 
-<!-- BATCH MODAL -->
-<div id="batchModal" class="modal"><div class="sheet">
-    <h2 style="color:var(--gold);">NEW COOK BATCH</h2>
-    <label>Product</label><select id="bProd"><option value="CHICKEN">CHICKEN</option></select>
-    <label>Kilos Prepared</label><input id="bKilos" type="number" step="0.1">
-    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="addBatch()">ADD TO STOCK</button>
-    <button class="btn" style="width:100%; color:#666;" onclick="closeModal('batchModal')">CANCEL</button>
+<!-- CLIENT LIST MODAL -->
+<div id="clientListModal" class="modal"><div class="sheet" style="max-width: 600px;">
+    <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
+    <div style="overflow-x:auto; margin-top: 15px;">
+        <table>
+            <thead><tr><th>Phone</th><th>Name</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="clientListBody"></tbody>
+        </table>
+    </div>
+    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="closeModal('clientListModal')">CLOSE</button>
+</div></div>
+
+<!-- CLIENT EDIT MODAL -->
+<div id="clientEditModal" class="modal"><div class="sheet">
+    <h2 style="color:var(--gold); margin:0;">EDIT CLIENT</h2>
+    <input type="hidden" id="ceOldPhone">
+    <label>Phone (Account #)</label><input id="cePhone">
+    <label>Name</label><input id="ceName">
+    <label>Address</label><input id="ceAddress">
+    <label>WhatsApp</label><input id="ceWhatsApp">
+    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="saveClientEdit()">UPDATE CLIENT</button>
+    <button class="btn" style="width:100%; color:#666;" onclick="closeModal('clientEditModal')">CANCEL</button>
+</div></div>
+
+<!-- REMAINING MODALS UNCHANGED -->
+<div id="stockModal" class="modal"><div class="sheet">
+    <h2 style="color:var(--gold); margin:0;">ADD STOCK</h2>
+    <input type="hidden" id="editStId">
+    <label>Date</label><input id="stDate" type="date">
+    <label>Category</label><select id="stProd" onchange="syncUnits('stProd','stUnitLabel')"><option value="CHICKEN">CHICKEN</option><option value="GIZZARDS">GIZZARDS</option><option value="FEET">FEET</option></select>
+    <label>Supplier/Note</label><input id="stSupplier">
+    <label id="stUnitLabel">Amount (kg)</label><input id="stKilos" type="number" step="0.1">
+    <label>Total Cost ($)</label><input id="stCost" type="number" step="0.01">
+    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="saveStock()">SAVE STOCK</button>
+    <button class="btn" style="width:100%; color:#666;" onclick="closeModal('stockModal')">CANCEL</button>
+</div></div>
+
+<div id="expenseModal" class="modal"><div class="sheet">
+    <h2 style="color:var(--gold); margin:0;">EXPENSE / LOSS</h2>
+    <input type="hidden" id="editExId">
+    <label>Type</label><select id="exType"><option value="EXPENSE">BUSINESS EXPENSE</option><option value="LOSS">PRODUCT LOSS</option></select>
+    <label>Affects Stock</label><select id="exProd" onchange="syncUnits('exProd','exUnitLabel')"><option value="CHICKEN">CHICKEN</option><option value="GIZZARDS">GIZZARDS</option><option value="FEET">FEET</option></select>
+    <label>Date</label><input id="exDate" type="date">
+    <label>Description</label><input id="exNote">
+    <label>Cost ($)</label><input id="exCost" type="number" step="0.01">
+    <label id="exUnitLabel">Qty (kg)</label><input id="exKilos" type="number" step="0.1">
+    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="saveExpense()">SAVE ENTRY</button>
+    <button class="btn" style="width:100%; color:#666;" onclick="closeModal('expenseModal')">CANCEL</button>
+</div></div>
+
+<div id="batchEditModal" class="modal"><div class="sheet">
+    <h2 style="color:var(--gold); margin:0;">EDIT BATCH RECORD</h2>
+    <input type="hidden" id="editBId">
+    <label>Batch Opened</label><input id="bOpen" type="date">
+    <label>Batch Closed</label><input id="bClose" type="date">
+    <label>Total Revenue ($)</label><input id="bRev" type="number">
+    <label>Total Expenses/Cost ($)</label><input id="bExp" type="number">
+    <label>Total Kilos Sold</label><input id="bKilos" type="number" step="0.1">
+    <label>Spoilage / Free (Kilos)</label><input id="bLoss" type="number" step="0.1">
+    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="saveBatchEdit()">UPDATE BATCH</button>
+    <button class="btn" style="width:100%; color:#666;" onclick="closeModal('batchEditModal')">CANCEL</button>
 </div></div>
 
 <script>
-let bizData = JSON.parse(localStorage.getItem("perreria_v10") || '{"transactions":[], "customers":[], "batchHistory":[]}');
+// V10.8 Data Structure includes 'clients'
+let bizData = JSON.parse(localStorage.getItem("perreria_v10") || '{"transactions":[], "logo": null, "batchHistory": [], "clients": []}');
+
+function getPVDate() {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Bahia_Banderas',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(new Date());
+}
 
 function save() { localStorage.setItem("perreria_v10", JSON.stringify(bizData)); render(); }
 
-// --- ROLODEX LOGIC ---
+function syncUnits(selectId, labelId) {
+    const val = document.getElementById(selectId).value;
+    document.getElementById(labelId).innerText = (val === "CHICKEN") ? "Qty (kg)" : "Qty (g)";
+}
 
-function autoFillByPhone() {
-    const val = document.getElementById('sPhone').value;
-    const match = bizData.customers.find(c => c.phone === val);
-    if(match) {
-        document.getElementById('sClient').value = match.name;
-        document.getElementById('sAddress').value = match.address;
+function openModal(id) { 
+    const d = getPVDate();
+    if(id === 'saleModal') { 
+        document.getElementById('editSId').value = ""; 
+        document.getElementById('sPhone').value = "";
+        document.getElementById('sClient').value = ""; 
+        document.getElementById('sWhatsApp').value = ""; 
+        document.getElementById('sAddress').value = "";
+        document.getElementById('sKilos').value = 0; 
+        document.getElementById('sPrice').value = 50; 
+        document.getElementById('sDelivery').value = 10; 
+        syncUnits('sProd','sUnitLabel'); 
+        updateReceipt(); 
+    }
+    if(id === 'stockModal') { document.getElementById('editStId').value = ""; document.getElementById('stSupplier').value = ""; document.getElementById('stKilos').value = 0; syncUnits('stProd','stUnitLabel'); }
+    if(id === 'expenseModal') { document.getElementById('editExId').value = ""; document.getElementById('exNote').value = ""; document.getElementById('exCost').value = 0; syncUnits('exProd','exUnitLabel'); }
+    if(id === 'clientListModal') { renderClients(); }
+    
+    document.getElementById(id).style.display = "flex"; 
+    ['sDate', 'stDate', 'exDate', 'bOpen', 'bClose'].forEach(f => { if(document.getElementById(f)) document.getElementById(f).value = d; });
+}
+
+function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+// CLIENT LOGIC
+function lookupClient(phone) {
+    if(!bizData.clients) bizData.clients = [];
+    const client = bizData.clients.find(c => c.phone === phone && !c.archived);
+    if(client) {
+        document.getElementById('sClient').value = client.name;
+        document.getElementById('sAddress').value = client.address;
+        document.getElementById('sWhatsApp').value = client.whatsapp || client.phone;
+        updateReceipt();
     }
 }
 
-function autoFillByName() {
-    const val = document.getElementById('sClient').value;
-    const match = bizData.customers.find(c => c.name.toLowerCase() === val.toLowerCase());
-    if(match) {
-        document.getElementById('sPhone').value = match.phone;
-        document.getElementById('sAddress').value = match.address;
-    }
+function syncClientFromOrder() {
+    const phone = document.getElementById('sPhone').value;
+    if(!phone) return;
+    if(!bizData.clients) bizData.clients = [];
+    
+    let idx = bizData.clients.findIndex(c => c.phone === phone);
+    const clientObj = {
+        phone: phone,
+        name: document.getElementById('sClient').value,
+        address: document.getElementById('sAddress').value,
+        whatsapp: document.getElementById('sWhatsApp').value,
+        archived: false
+    };
+
+    if(idx > -1) bizData.clients[idx] = clientObj;
+    else bizData.clients.push(clientObj);
 }
 
-function captureCustomer(name, phone, addr) {
-    if(!phone || phone.trim() === "" || name === "CARRY OVER") return;
-    const idx = bizData.customers.findIndex(c => c.phone === phone);
+function renderClients() {
+    if(!bizData.clients) bizData.clients = [];
+    document.getElementById('clientListBody').innerHTML = bizData.clients.map(c => `
+        <tr style="${c.archived ? 'opacity:0.5' : ''}">
+            <td>${c.phone}</td>
+            <td>${c.name}</td>
+            <td>${c.archived ? 'ARCHIVED' : 'ACTIVE'}</td>
+            <td class="btn-grp">
+                <button class="btn-sm" style="background:#222; color:var(--gold);" onclick="editClient('${c.phone}')">EDIT</button>
+                <button class="btn-sm" style="background:#333; color:#fff;" onclick="toggleArchiveClient('${c.phone}')">${c.archived ? 'UNARCHIVE' : 'ARCHIVE'}</button>
+                <button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function editClient(phone) {
+    const c = bizData.clients.find(x => x.phone === phone);
+    if(!c) return;
+    document.getElementById('ceOldPhone').value = c.phone;
+    document.getElementById('cePhone').value = c.phone;
+    document.getElementById('ceName').value = c.name;
+    document.getElementById('ceAddress').value = c.address;
+    document.getElementById('ceWhatsApp').value = c.whatsapp || c.phone;
+    openModal('clientEditModal');
+}
+
+function saveClientEdit() {
+    const oldPhone = document.getElementById('ceOldPhone').value;
+    const newPhone = document.getElementById('cePhone').value;
+    const idx = bizData.clients.findIndex(c => c.phone === oldPhone);
     if(idx > -1) {
-        bizData.customers[idx].name = name;
-        bizData.customers[idx].address = addr;
+        bizData.clients[idx] = {
+            phone: newPhone,
+            name: document.getElementById('ceName').value,
+            address: document.getElementById('ceAddress').value,
+            whatsapp: document.getElementById('ceWhatsApp').value,
+            archived: bizData.clients[idx].archived
+        };
+        save(); closeModal('clientEditModal'); renderClients();
+    }
+}
+
+function deleteClient(phone) { if(confirm("Delete client?")) { bizData.clients = bizData.clients.filter(c => c.phone !== phone); save(); renderClients(); } }
+function toggleArchiveClient(phone) { 
+    const c = bizData.clients.find(x => x.phone === phone);
+    if(c) { c.archived = !c.archived; save(); renderClients(); }
+}
+
+// SALE LOGIC
+function saveSale() {
+    syncClientFromOrder(); // Auto-update client list
+    const id = document.getElementById('editSId').value, k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, d = parseFloat(document.getElementById('sDelivery').value) || 0;
+    const data = { 
+        id: id ? parseInt(id) : Date.now(), 
+        date: document.getElementById('sDate').value, 
+        type: 'SALE', 
+        client: document.getElementById('sClient').value, 
+        product: document.getElementById('sProd').value, 
+        phone: document.getElementById('sWhatsApp').value, // Use WhatsApp field for logic
+        account: document.getElementById('sPhone').value, // Save the account phone
+        address: document.getElementById('sAddress').value, 
+        kilos: k, pricePerKg: p, delFee: d, status: 'PENDING', total: (k * p) + d 
+    };
+    if(id) { const idx = bizData.transactions.findIndex(x => x.id == id); data.status = bizData.transactions[idx].status; bizData.transactions[idx] = data; }
+    else bizData.transactions.push(data);
+    save(); closeModal('saleModal');
+}
+
+function editTx(id) {
+    const t = bizData.transactions.find(x => x.id === id);
+    if(!t) return;
+    if(t.type === 'SALE') {
+        openModal('saleModal'); document.getElementById('editSId').value = t.id;
+        document.getElementById('sDate').value = t.date; 
+        document.getElementById('sPhone').value = t.account || "";
+        document.getElementById('sClient').value = t.client;
+        document.getElementById('sProd').value = t.product || "CHICKEN"; 
+        document.getElementById('sWhatsApp').value = t.phone || "";
+        document.getElementById('sAddress').value = t.address || ""; 
+        document.getElementById('sKilos').value = t.kilos;
+        document.getElementById('sPrice').value = t.pricePerKg; 
+        document.getElementById('sDelivery').value = t.delFee;
+        syncUnits('sProd','sUnitLabel'); updateReceipt();
+    } else if(t.type === 'STOCK') {
+        openModal('stockModal'); document.getElementById('editStId').value = t.id;
+        document.getElementById('stDate').value = t.date; document.getElementById('stProd').value = t.product || "CHICKEN";
+        document.getElementById('stSupplier').value = t.client; document.getElementById('stKilos').value = t.kilos;
+        document.getElementById('stCost').value = Math.abs(t.total); syncUnits('stProd','stUnitLabel');
     } else {
-        bizData.customers.push({ id: Date.now(), name, phone, address: addr });
+        openModal('expenseModal'); document.getElementById('editExId').value = t.id;
+        document.getElementById('exDate').value = t.date; document.getElementById('exType').value = t.type;
+        document.getElementById('exProd').value = t.product || "CHICKEN"; document.getElementById('exNote').value = t.client;
+        document.getElementById('exCost').value = Math.abs(t.total); document.getElementById('exKilos').value = t.kilos || 0;
+        syncUnits('exProd','exUnitLabel');
     }
 }
 
-function editCustomer(id) {
-    const c = bizData.customers.find(x => x.id === id);
-    if(c) {
-        document.getElementById('custEditId').value = c.id;
-        document.getElementById('custName').value = c.name;
-        document.getElementById('custPhone').value = c.phone;
-        document.getElementById('custAddress').value = c.address;
-    }
+// EXISTING FUNCTIONS (UNCHANGED)
+function updateReceipt() {
+    const k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, d = parseFloat(document.getElementById('sDelivery').value) || 0;
+    const prod = document.getElementById('sProd').value;
+    const unit = prod === "CHICKEN" ? "kg" : "g";
+    document.getElementById('grandTotalLabel').innerText = `TOTAL: $${((k * p) + d).toFixed(0)} MXN`;
+    document.getElementById('receiptContent').innerText = `CLIENTE: ${document.getElementById('sClient').value}\nPRODUCTO: ${prod}\nPEDIDO: ${k}${unit} x $${p}\nENVÍO: $${d}\n📍: ${document.getElementById('sAddress').value}`;
 }
 
-function deleteCustomer(id) {
-    if(confirm("Delete this client?")) {
-        bizData.customers = bizData.customers.filter(c => c.id !== id);
+function sendWhatsApp() {
+    const k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, del = parseFloat(document.getElementById('sDelivery').value) || 0;
+    const phone = document.getElementById('sWhatsApp').value.replace(/\D/g,''), prod = document.getElementById('sProd').value;
+    const msg = encodeURIComponent(`🍗 *LA PERRERÍA GOURMET PV*\n*PEDIDO:* ${prod} (${k}${prod==="CHICKEN"?"kg":"g"})\n*ENVÍO:* $${del}\n*TOTAL: $${(k*p)+del} MXN*`);
+    if(phone) window.open(`https://wa.me/${phone.length === 10 ? '52'+phone : phone}?text=${msg}`, '_blank');
+}
+
+function saveStock() {
+    const id = document.getElementById('editStId').value;
+    const data = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('stDate').value, type: 'STOCK', client: document.getElementById('stSupplier').value, product: document.getElementById('stProd').value, kilos: parseFloat(document.getElementById('stKilos').value) || 0, total: -parseFloat(document.getElementById('stCost').value) || 0 };
+    if(id) { const idx = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[idx] = data; }
+    else bizData.transactions.push(data);
+    save(); closeModal('stockModal');
+}
+
+function saveExpense() {
+    const id = document.getElementById('editExId').value;
+    const data = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('exDate').value, type: document.getElementById('exType').value, product: document.getElementById('exProd').value, client: document.getElementById('exNote').value, kilos: parseFloat(document.getElementById('exKilos').value) || 0, total: -parseFloat(document.getElementById('exCost').value) || 0 };
+    if(id) { const idx = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[idx] = data; }
+    else bizData.transactions.push(data);
+    save(); closeModal('expenseModal');
+}
+
+function toggleStatus(id) { const tx = bizData.transactions.find(t => t.id === id); if(tx) { tx.status = (tx.status === 'COMPLETED') ? 'PENDING' : 'COMPLETED'; save(); } }
+function deleteTx(id) { if(confirm("Delete?")) { bizData.transactions = bizData.transactions.filter(t => t.id !== id); save(); } }
+
+function render() {
+    const today = getPVDate();
+    let s_chicken = 0, s_giz = 0, s_feet = 0, pRev = 0, dRev = 0, fCount = 0, kSoldToday = 0;
+    const logoImg = document.getElementById('mainLogo');
+    if(bizData.logo) { logoImg.src = bizData.logo; logoImg.style.display = "block"; document.getElementById('logoLabel').style.display = "none"; }
+    else { logoImg.style.display = "none"; document.getElementById('logoLabel').style.display = "block"; }
+
+    document.getElementById('ledgerBody').innerHTML = bizData.transactions.sort((a,b) => b.id - a.id).map(t => {
+        const prod = t.product || "CHICKEN";
+        const amt = parseFloat(t.kilos) || 0;
+        if(t.type === 'SALE' || t.type === 'LOSS') {
+            const factor = -amt;
+            if(prod === "CHICKEN") s_chicken += factor; else if(prod === "GIZZARDS") s_giz += factor; else s_feet += factor;
+            if(t.type === 'SALE' && t.date === today && t.status === 'COMPLETED') { 
+                pRev += (t.total - t.delFee); dRev += t.delFee; 
+                if(prod === "CHICKEN") kSoldToday += amt;
+                if(t.pricePerKg === 0) fCount += amt; 
+            }
+        } else if (t.type === 'STOCK') { if(prod === "CHICKEN") s_chicken += amt; else if(prod === "GIZZARDS") s_giz += amt; else s_feet += amt; }
+        return `<tr><td>${t.date.slice(5)}</td><td>${t.client} <small>(${prod})</small></td><td><button class="badge ${t.status === 'COMPLETED' ? 'badge-done' : 'badge-pending'}" onclick="toggleStatus(${t.id})">${t.type==='SALE'?t.status:t.type}</button></td><td>$${Math.abs(t.total).toFixed(0)}</td><td class="btn-grp"><button class="btn-sm" style="background:#222; color:var(--gold);" onclick="editTx(${t.id})">EDIT</button><button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteTx(${t.id})">DEL</button></td></tr>`;
+    }).join("");
+
+    document.getElementById('stockVal').innerText = s_chicken.toFixed(1) + ' kg';
+    document.getElementById('kiloSoldDay').innerText = kSoldToday.toFixed(1) + ' kg';
+    document.getElementById('gizVal').innerText = s_giz.toFixed(0) + 'g';
+    document.getElementById('feetVal').innerText = s_feet.toFixed(0) + 'g';
+    document.getElementById('todaySales').innerText = '$' + pRev.toFixed(0) + ' MXN';
+    document.getElementById('deliverySales').innerText = '$' + dRev.toFixed(0) + ' MXN';
+    document.getElementById('freeStat').innerText = fCount.toFixed(1) + ' units';
+
+    renderBatchHistory();
+}
+
+function renderBatchHistory() {
+    if(!bizData.batchHistory) bizData.batchHistory = [];
+    document.getElementById('batchHistoryBody').innerHTML = bizData.batchHistory.sort((a,b) => b.id - a.id).map(b => {
+        const d1 = new Date(b.opened); const d2 = new Date(b.closed);
+        const diff = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) || 1;
+        return `<tr>
+            <td><small>O: ${b.opened}<br>C: ${b.closed}</small></td>
+            <td>${Math.max(1, diff)}</td>
+            <td>${b.totalKilosSold.toFixed(1)}</td>
+            <td>$${b.totalRevenue.toFixed(0)}</td>
+            <td>$${b.totalExpenses.toFixed(0)}</td>
+            <td>${b.lossKilos.toFixed(1)}kg</td>
+            <td style="color:var(--success); font-weight:bold;">$${b.netProfit.toFixed(0)}</td>
+            <td class="btn-grp">
+                <button class="btn-sm" style="background:#222; color:var(--gold);" onclick="editBatch(${b.id})">EDIT</button>
+                <button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteBatch(${b.id})">DEL</button>
+            </td>
+        </tr>`;
+    }).join("");
+}
+
+function closeBatch() {
+    if(bizData.transactions.length === 0) return alert("No transactions to close.");
+    if(confirm("CLOSE BATCH AND SAVE TO HISTORY?")) {
+        let rev = 0, exp = 0, soldK = 0, lossK = 0;
+        let timestamps = bizData.transactions.map(t => new Date(t.date).getTime());
+        let openDate = new Date(Math.min(...timestamps)).toISOString().split('T')[0];
+        let closeDate = getPVDate();
+
+        bizData.transactions.forEach(t => {
+            if(t.type === 'SALE') { rev += t.total; if(t.product === "CHICKEN") soldK += t.kilos; if(t.pricePerKg === 0) lossK += t.kilos; }
+            else { exp += Math.abs(t.total); if(t.type === 'LOSS' && t.product === "CHICKEN") lossK += t.kilos; }
+        });
+
+        let stock = { CHICKEN: 0, GIZZARDS: 0, FEET: 0 };
+        bizData.transactions.forEach(t => {
+            let amt = parseFloat(t.kilos) || 0;
+            if(t.type === 'STOCK') stock[t.product] += amt;
+            else stock[t.product] -= amt;
+        });
+
+        if(!bizData.batchHistory) bizData.batchHistory = [];
+        bizData.batchHistory.push({
+            id: Date.now(), opened: openDate, closed: closeDate, totalKilosSold: soldK,
+            totalRevenue: rev, totalExpenses: exp, lossKilos: lossK, netProfit: rev - exp
+        });
+
+        bizData.transactions = [];
+        Object.keys(stock).forEach(prod => {
+            if(stock[prod] > 0) {
+                bizData.transactions.push({
+                    id: Date.now() + Math.random(), date: closeDate, type: 'STOCK', 
+                    client: 'CARRY OVER', product: prod, kilos: stock[prod], total: 0
+                });
+            }
+        });
         save();
     }
 }
 
-function saveCustomerManual() {
-    const id = document.getElementById('custEditId').value;
-    const n = document.getElementById('custName').value;
-    const p = document.getElementById('custPhone').value;
-    const a = document.getElementById('custAddress').value;
-    if(!p) return alert("Phone is required");
-    
-    if(id) {
-        const idx = bizData.customers.findIndex(c => c.id == id);
-        bizData.customers[idx] = { id: parseInt(id), name: n, phone: p, address: a };
-    } else {
-        bizData.customers.push({ id: Date.now(), name: n, phone: p, address: a });
+function editBatch(id) {
+    const b = bizData.batchHistory.find(x => x.id === id);
+    if(!b) return;
+    document.getElementById('editBId').value = b.id;
+    document.getElementById('bOpen').value = b.opened;
+    document.getElementById('bClose').value = b.closed;
+    document.getElementById('bRev').value = b.totalRevenue;
+    document.getElementById('bExp').value = b.totalExpenses;
+    document.getElementById('bKilos').value = b.totalKilosSold;
+    document.getElementById('bLoss').value = b.lossKilos;
+    document.getElementById('batchEditModal').style.display = "flex";
+}
+
+function saveBatchEdit() {
+    const id = parseInt(document.getElementById('editBId').value);
+    const idx = bizData.batchHistory.findIndex(x => x.id === id);
+    if(idx !== -1) {
+        let b = bizData.batchHistory[idx];
+        b.opened = document.getElementById('bOpen').value;
+        b.closed = document.getElementById('bClose').value;
+        b.totalRevenue = parseFloat(document.getElementById('bRev').value);
+        b.totalExpenses = parseFloat(document.getElementById('bExp').value);
+        b.totalKilosSold = parseFloat(document.getElementById('bKilos').value);
+        b.lossKilos = parseFloat(document.getElementById('bLoss').value);
+        b.netProfit = b.totalRevenue - b.totalExpenses;
+        save(); closeModal('batchEditModal');
     }
-    ['custEditId','custName','custPhone','custAddress'].forEach(k => document.getElementById(k).value="");
-    save();
 }
 
-// --- ORDER LOGIC ---
+function deleteBatch(id) { if(confirm("Permanently delete this batch?")) { bizData.batchHistory = bizData.batchHistory.filter(b => b.id !== id); save(); } }
 
-function openSaleModal() {
-    document.getElementById('editSId').value = "";
-    document.getElementById('sDate').value = new Date().toISOString().split('T')[0];
-    openModal('saleModal');
+function exportData() {
+    const blob = new Blob([JSON.stringify(bizData)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `perreria_v10.8_PV.json`; a.click();
+}
+function importData(event) {
+    const reader = new FileReader();
+    reader.onload = function(e) { bizData = JSON.parse(e.target.result); save(); location.reload(); };
+    reader.readAsText(event.target.files[0]);
+}
+function uploadLogo(event) {
+    const reader = new FileReader();
+    reader.onload = function() { bizData.logo = reader.result; save(); };
+    reader.readAsDataURL(event.target.files[0]);
 }
 
-function saveSale() {
-    const id = document.getElementById('editSId').value;
-    const n = document.getElementById('sClient').value, p = document.getElementById('sPhone').value, a = document.getElementById('sAddress').value;
-    const k = parseFloat(document.getElementById('sKilos').value) || 0, pr = parseFloat(document.getElementById('sPrice').value) || 0, d = parseFloat(document.getElementById('sDelivery').value) || 0;
-    
-    const data = { 
-        id: id ? parseInt(id) : Date.now(), date: document.getElementById('sDate').value, type: 'SALE',
-        client: n, phone: p, address: a, product: document.getElementById('sProd').value,
-        kilos: k, pricePerKg: pr, delFee: d, total: (k*pr)+d, status: 'PENDING'
-    };
-
-    if(id) {
-        const idx = bizData.transactions.findIndex(x => x.id == id);
-        data.status = bizData.transactions[idx].status;
-        bizData.transactions[idx] = data;
-    } else {
-        bizData.transactions.push(data);
-    }
-    
-    captureCustomer(n, p, a);
-    save();
-    closeModal('saleModal');
-}
-
-function toggleStatus(id) {
-    const idx = bizData.transactions.findIndex(x => x.id == id);
-    bizData.transactions[idx].status = bizData.transactions[idx].status === 'PENDING' ? 'PAID' : 'PENDING';
-    save();
-}
-
-function deleteSale(id) { if(confirm("Delete order?")) { bizData.transactions = bizData.transactions.filter(x => x.id != id); save(); } }
-
-function addBatch() {
-    const k = parseFloat(document.getElementById('bKilos').value) || 0;
-    bizData.batchHistory.push({ id: Date.now(), product: 'CHICKEN', kilos: k, date: new Date().toISOString() });
-    document.getElementById('bKilos').value = "";
-    save();
-    closeModal('batchModal');
-}
-
-// --- UTILS ---
-
-function updateReceipt() {
-    const n = document.getElementById('sClient').value || "Guest";
-    const a = document.getElementById('sAddress').value || "No address";
-    const k = document.getElementById('sKilos').value || 0;
-    const p = document.getElementById('sPrice').value || 0;
-    const d = parseFloat(document.getElementById('sDelivery').value) || 0;
-    const total = (k * p) + d;
-    
-    document.getElementById('receiptContent').innerText = `LA PERRERÍA GOURMET PV\n----------------------\nCLIENT: ${n}\nADDR: ${a}\nITEM: ${k}kg Chicken\nDELIVERY: $${d}`;
-    document.getElementById('grandTotalLabel').innerText = `TOTAL: $${total}`;
-}
-
-function sendWhatsApp() {
-    const p = document.getElementById('sPhone').value;
-    const msg = encodeURIComponent(document.getElementById('receiptContent').innerText + `\nTOTAL: $${document.getElementById('grandTotalLabel').innerText.split('$')[1]}`);
-    if(!p) return alert("Enter phone first");
-    window.open(`https://wa.me/52${p}?text=${msg}`);
-}
-
-function render() {
-    const today = new Date().toISOString().split('T')[0];
-    const txToday = bizData.transactions.filter(x => x.date === today);
-    
-    let dailyTotal = 0, soldKilos = 0;
-    txToday.forEach(t => { dailyTotal += t.total; soldKilos += t.kilos; });
-    
-    const totalBatch = bizData.batchHistory.reduce((sum, b) => sum + b.kilos, 0);
-    const totalSoldEver = bizData.transactions.reduce((sum, t) => sum + t.kilos, 0);
-    
-    document.getElementById('stockMain').innerText = (totalBatch - totalSoldEver).toFixed(1) + " kg";
-    document.getElementById('cashRunning').innerText = "$" + dailyTotal.toLocaleString();
-
-    document.getElementById('ledgerBody').innerHTML = txToday.map(t => `
-        <tr>
-            <td><strong>${t.client}</strong><br><small>${t.phone}</small></td>
-            <td>${t.kilos}kg @ $${t.pricePerKg}<br><small>$${t.total}</small></td>
-            <td>
-                <span class="status-${t.status.toLowerCase()}" onclick="toggleStatus(${t.id})">${t.status}</span><br>
-                <button class="btn-sm" style="background:transparent; color:#555;" onclick="deleteSale(${t.id})">🗑️</button>
-            </td>
-        </tr>
-    `).join("");
-
-    document.getElementById('customerListBody').innerHTML = bizData.customers.sort((a,b) => a.name.localeCompare(b.name)).map(c => `
-        <tr>
-            <td style="color:var(--gold); font-weight:bold;">${c.name}<br><small style="color:#777">${c.phone}</small></td>
-            <td class="btn-grp">
-                <button class="btn-sm" style="background:#222; color:var(--gold);" onclick="editCustomer(${c.id})">EDIT</button>
-                <button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteCustomer(${c.id})">DEL</button>
-            </td>
-        </tr>
-    `).join("");
-
-    document.getElementById('phoneOptions').innerHTML = bizData.customers.map(c => `<option value="${c.phone}">${c.name}</option>`).join("");
-    document.getElementById('nameOptions').innerHTML = bizData.customers.map(c => `<option value="${c.name}">`).join("");
-}
-
-function openModal(id) { document.getElementById(id).style.display = 'block'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-window.onload = render;
+render();
 </script>
 </body>
 </html>
