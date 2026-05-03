@@ -114,12 +114,6 @@
     <button class="btn" style="width:100%; color:#666;" onclick="closeModal('stockModal')">CANCEL</button>
 </div></div>
 
-<div id="clientListModal" class="modal"><div class="sheet">
-    <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
-    <div style="margin-top: 15px; border: 1px solid #333; border-radius: 8px; background: #000;"><table><thead><tr><th>Phone</th><th>Name</th><th>Actions</th></tr></thead><tbody id="clientListBody"></tbody></table></div>
-    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="closeModal('clientListModal')">CLOSE</button>
-</div></div>
-
 <div id="expenseModal" class="modal"><div class="sheet">
     <h2 style="color:var(--gold); margin:0;">EXPENSE / LOSS</h2>
     <input type="hidden" id="editExId">
@@ -133,6 +127,12 @@
     <button class="btn" style="width:100%; color:#666;" onclick="closeModal('expenseModal')">CANCEL</button>
 </div></div>
 
+<div id="clientListModal" class="modal"><div class="sheet">
+    <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
+    <div style="margin-top: 15px; border: 1px solid #333; border-radius: 8px; background: #000;"><table><thead><tr><th>Phone</th><th>Name</th><th>Actions</th></tr></thead><tbody id="clientListBody"></tbody></table></div>
+    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="closeModal('clientListModal')">CLOSE</button>
+</div></div>
+
 <script>
 let bizData = JSON.parse(localStorage.getItem("perreria_v10") || '{"transactions":[], "logo": null, "batchHistory": [], "clients": []}');
 let viewBatchId = null;
@@ -144,6 +144,7 @@ function openModal(id) {
     const d = getPVDate();
     if(id === 'saleModal') { document.getElementById('editSId').value = ""; document.getElementById('sPhone').value = ""; document.getElementById('sClient').value = ""; document.getElementById('sWhatsApp').value = ""; document.getElementById('sAddress').value = ""; document.getElementById('sKilos').value = 0; document.getElementById('sPrice').value = 50; document.getElementById('sDelivery').value = 10; updateReceipt(); }
     if(id === 'stockModal') { document.getElementById('editStId').value = ""; document.getElementById('stSupplier').value = ""; document.getElementById('stKilos').value = 0; document.getElementById('stCost').value = 0; }
+    if(id === 'expenseModal') { document.getElementById('editExId').value = ""; document.getElementById('exNote').value = ""; document.getElementById('exCost').value = 0; document.getElementById('exKilos').value = 0; }
     if(id === 'clientListModal') { renderClients(); }
     document.getElementById(id).style.display = "flex"; 
     ['sDate', 'stDate', 'exDate'].forEach(f => { if(document.getElementById(f)) document.getElementById(f).value = d; });
@@ -155,13 +156,15 @@ function syncClientFromOrder() { const p = document.getElementById('sPhone').val
 function renderClients() { const container = document.getElementById('clientListBody'); if(!bizData.clients.length) { container.innerHTML = '<tr><td colspan="3" style="text-align:center;">NO CLIENTS</td></tr>'; return; } container.innerHTML = bizData.clients.map(c => `<tr><td>${c.phone}</td><td>${c.name}</td><td class="btn-grp"><button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button></td></tr>`).join(""); }
 function deleteClient(p) { if(confirm("DELETE CLIENT?")) { bizData.clients = bizData.clients.filter(c => c.phone !== p); save(); renderClients(); } }
 
+// CRITICAL FIX: Close modal and reset fields after save
 function saveSale() {
     syncClientFromOrder();
     const id = document.getElementById('editSId').value, k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, d = parseFloat(document.getElementById('sDelivery').value) || 0;
     const tx = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('sDate').value, type: 'SALE', client: document.getElementById('sClient').value, product: document.getElementById('sProd').value, phone: document.getElementById('sWhatsApp').value, account: document.getElementById('sPhone').value, address: document.getElementById('sAddress').value, kilos: k, pricePerKg: p, delFee: d, status: 'PENDING', total: (k * p) + d };
     if(viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if(id) { let i = b.txs.findIndex(x => x.id == id); b.txs[i] = tx; } else b.txs.push(tx); } 
     else { if(id) { let i = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[i] = tx; } else bizData.transactions.push(tx); }
-    save(); closeModal('saleModal');
+    save(); 
+    closeModal('saleModal');
 }
 
 function updateReceipt() {
@@ -170,7 +173,6 @@ function updateReceipt() {
     document.getElementById('receiptContent').innerText = `CLIENTE: ${document.getElementById('sClient').value}\nPRODUCTO: ${prod}\nPEDIDO: ${k}${prod === "CHICKEN" ? "kg" : "g"} x $${p}\nENVÍO: $${d}\n📍: ${document.getElementById('sAddress').value}`;
 }
 
-// CORRECTION 1: Address in WhatsApp message
 function sendWhatsApp() {
     const k = parseFloat(document.getElementById('sKilos').value) || 0, p = parseFloat(document.getElementById('sPrice').value) || 0, del = parseFloat(document.getElementById('sDelivery').value) || 0, addr = document.getElementById('sAddress').value;
     const phone = document.getElementById('sWhatsApp').value.replace(/\D/g,''), prod = document.getElementById('sProd').value;
@@ -178,23 +180,24 @@ function sendWhatsApp() {
     if(phone) window.open(`https://wa.me/${phone.length === 10 ? '52'+phone : phone}?text=${msg}`, '_blank');
 }
 
-// CORRECTION 2: Proper resetting of stock fields
+// CRITICAL FIX: Close modal and reset fields after save
 function saveStock() {
     const id = document.getElementById('editStId').value;
     const tx = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('stDate').value, type: 'STOCK', client: document.getElementById('stSupplier').value, product: document.getElementById('stProd').value, kilos: parseFloat(document.getElementById('stKilos').value) || 0, total: -parseFloat(document.getElementById('stCost').value) || 0 };
     if(viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if(id) { let i = b.txs.findIndex(x => x.id == id); b.txs[i] = tx; } else b.txs.push(tx); }
     else { if(id) { let i = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[i] = tx; } else bizData.transactions.push(tx); }
-    save(); closeModal('stockModal');
-    // Clear fields explicitly
-    document.getElementById('stSupplier').value = ""; document.getElementById('stKilos').value = 0; document.getElementById('stCost').value = 0;
+    save(); 
+    closeModal('stockModal');
 }
 
+// CRITICAL FIX: Close modal and reset fields after save
 function saveExpense() {
     const id = document.getElementById('editExId').value;
     const tx = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('exDate').value, type: document.getElementById('exType').value, product: document.getElementById('exProd').value, client: document.getElementById('exNote').value, kilos: parseFloat(document.getElementById('exKilos').value) || 0, total: -parseFloat(document.getElementById('exCost').value) || 0 };
     if(viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if(id) { let i = b.txs.findIndex(x => x.id == id); b.txs[i] = tx; } else b.txs.push(tx); }
     else { if(id) { let i = bizData.transactions.findIndex(x => x.id == id); bizData.transactions[i] = tx; } else bizData.transactions.push(tx); }
-    save(); closeModal('expenseModal');
+    save(); 
+    closeModal('expenseModal');
 }
 
 function deleteTx(id) { if(confirm("DELETE ENTRY?")) { if(viewBatchId) { let b = bizData.batchHistory.find(x => x.id === viewBatchId); b.txs = b.txs.filter(t => t.id !== id); } else bizData.transactions = bizData.transactions.filter(t => t.id !== id); save(); } }
@@ -232,7 +235,6 @@ function renderBatchHistory() {
     }).join("");
 }
 
-// CORRECTION 3: EDIT and DELETE functional in Archive
 function editBatch(id) { viewBatchId = id; document.getElementById('ledgerTitle').innerText = "ARCHIVED BATCH LEDGER (" + id + ")"; document.getElementById('backToActiveBtn').style.display = "block"; render(); }
 function viewActiveBatch() { viewBatchId = null; document.getElementById('ledgerTitle').innerText = "ACTIVE BATCH LEDGER"; document.getElementById('backToActiveBtn').style.display = "none"; render(); }
 function deleteBatch(id) { if(confirm("DELETE BATCH?")) { bizData.batchHistory = bizData.batchHistory.filter(b => b.id !== id); save(); } }
