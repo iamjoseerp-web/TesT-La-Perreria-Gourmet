@@ -113,10 +113,10 @@
     <h2 style="color:var(--gold); margin:0;">NEW ORDER</h2>
     <input type="hidden" id="editSId">
     <label>Date</label><input id="sDate" type="date">
-    <label>Telephone (Account #)</label><input id="sPhone" oninput="lookupClient(this.value)">
+    <label>Telephone (Account #)</label><input id="sPhone" oninput="syncPhoneToWA(this.value); lookupClient(this.value)">
     <label>Client Name</label><input id="sClient" oninput="updateReceipt()">
     <label>Address</label><input id="sAddress" oninput="updateReceipt()">
-    <label>WhatsApp</label><input id="sWhatsApp" oninput="updateReceipt()">
+    <label>WhatsApp Number</label><input id="sWhatsApp" oninput="updateReceipt()">
     <label>Product</label><select id="sProd" onchange="syncUnits('sProd','sUnitLabel'); updateReceipt()"><option value="CHICKEN">CHICKEN (MAIN)</option><option value="GIZZARDS">GIZZARDS</option><option value="FEET">FEET</option></select>
     <div style="display:flex; gap:10px;">
       <div style="flex:1;"><label id="sUnitLabel">Qty (kg)</label><input id="sKilos" type="number" step="0.1" oninput="updateReceipt()"></div>
@@ -133,7 +133,7 @@
     <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
     <div style="margin-top: 15px; border: 1px solid #333; border-radius: 8px; background: #000;">
         <table>
-            <thead><tr><th>Phone</th><th>Name</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Phone</th><th>Name</th><th>Actions</th></tr></thead>
             <tbody id="clientListBody"></tbody>
         </table>
     </div>
@@ -204,9 +204,15 @@ function openModal(id) {
 
 function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
+// AUTHORIZED CORRECTION 2: Sync Account Number to WhatsApp
+function syncPhoneToWA(val) {
+    document.getElementById('sWhatsApp').value = val;
+    updateReceipt();
+}
+
 function lookupClient(phone) {
     if(!bizData.clients) bizData.clients = [];
-    const client = bizData.clients.find(c => c.phone === phone && !c.archived);
+    const client = bizData.clients.find(c => c.phone === phone);
     if(client) {
         document.getElementById('sClient').value = client.name;
         document.getElementById('sAddress').value = client.address;
@@ -220,24 +226,62 @@ function syncClientFromOrder() {
     if(!phone) return;
     if(!bizData.clients) bizData.clients = [];
     let idx = bizData.clients.findIndex(c => c.phone === phone);
-    const clientObj = { phone: phone, name: document.getElementById('sClient').value, address: document.getElementById('sAddress').value, whatsapp: document.getElementById('sWhatsApp').value, archived: false };
+    const clientObj = { phone: phone, name: document.getElementById('sClient').value, address: document.getElementById('sAddress').value, whatsapp: document.getElementById('sWhatsApp').value };
     if(idx > -1) bizData.clients[idx] = clientObj; else bizData.clients.push(clientObj);
 }
 
+// AUTHORIZED CORRECTION 1: RESTORE AND FIX CLIENT BUTTONS
 function renderClients() {
     if(!bizData.clients) bizData.clients = [];
     const container = document.getElementById('clientListBody');
     if(bizData.clients.length === 0) {
-        container.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:#666;">NO CLIENTS FOUND. SAVE AN ORDER TO BEGIN.</td></tr>';
+        container.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#666;">NO CLIENTS FOUND. SAVE AN ORDER TO BEGIN.</td></tr>';
         return;
     }
     container.innerHTML = bizData.clients.map(c => `
-        <tr style="${c.archived ? 'opacity:0.5' : ''}">
-            <td>${c.phone}</td><td>${c.name}</td><td>${c.archived ? 'ARCHIVED' : 'ACTIVE'}</td>
+        <tr>
+            <td>${c.phone}</td><td>${c.name}</td>
             <td class="btn-grp">
                 <button class="btn-sm" style="background:#222; color:var(--gold);" onclick="editClient('${c.phone}')">EDIT</button>
+                <button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button>
             </td>
         </tr>`).join("");
+}
+
+function editClient(phone) {
+    const client = bizData.clients.find(c => c.phone === phone);
+    if(client) {
+        document.getElementById('ceOldPhone').value = client.phone;
+        document.getElementById('cePhone').value = client.phone;
+        document.getElementById('ceName').value = client.name;
+        document.getElementById('ceAddress').value = client.address || "";
+        document.getElementById('ceWhatsApp').value = client.whatsapp || client.phone;
+        openModal('clientEditModal');
+    }
+}
+
+function saveClientEdit() {
+    const oldP = document.getElementById('ceOldPhone').value;
+    const newP = document.getElementById('cePhone').value;
+    let idx = bizData.clients.findIndex(c => c.phone === oldP);
+    if(idx > -1) {
+        bizData.clients[idx] = { 
+            phone: newP, 
+            name: document.getElementById('ceName').value, 
+            address: document.getElementById('ceAddress').value, 
+            whatsapp: document.getElementById('ceWhatsApp').value 
+        };
+        // Update historical orders with new phone if changed
+        bizData.transactions.forEach(t => { if(t.account === oldP) t.account = newP; });
+        save(); closeModal('clientEditModal'); renderClients();
+    }
+}
+
+function deleteClient(phone) {
+    if(confirm("DELETE CLIENT FROM DATABASE?")) {
+        bizData.clients = bizData.clients.filter(c => c.phone !== phone);
+        save(); renderClients();
+    }
 }
 
 function saveSale() {
