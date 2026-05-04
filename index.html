@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Perrería Gourmet PV – Version 11.1 (LOCKED)</title>
+<title>La Perrería Gourmet PV – Version 11.2 (LOCKED)</title>
 <style>
   :root { --gold: #d4af37; --bg: #000000; --card-bg: #111111; --text: #ffffff; --danger: #ff4444; --success: #25D366; --pending: #ffcc00; --blue: #3498db; }
   body { margin:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 150px; }
@@ -83,11 +83,11 @@
   </div>
 </main>
 
-<footer>LA PERRERÍA GOURMET PV – V11.1 (LOCKED)</footer>
+<footer>LA PERRERÍA GOURMET PV – V11.2 (LOCKED)</footer>
 
 <!-- MODALS -->
 <div id="saleModal" class="modal"><div class="sheet">
-    <h2 style="color:var(--gold); margin:0;">NEW ORDER</h2>
+    <h2 style="color:var(--gold); margin:0;">NEW ORDER / EDIT CLIENT</h2>
     <input type="hidden" id="editSId">
     <label>Date</label><input id="sDate" type="date">
     <label>Telephone (Account #)</label><input id="sPhone" oninput="syncPhoneToWA(this.value); lookupClient(this.value)">
@@ -98,7 +98,7 @@
     <div style="display:flex; gap:10px;"><div style="flex:1;"><label id="sUnitLabel">Qty (kg)</label><input id="sKilos" type="number" step="0.1" oninput="updateReceipt()"></div><div style="flex:1;"><label>Price</label><input id="sPrice" type="number" oninput="updateReceipt()"></div><div style="flex:1;"><label>Delivery</label><input id="sDelivery" type="number" oninput="updateReceipt()"></div></div>
     <div id="receiptPreview" class="receipt-preview"><div id="receiptContent">...</div><div style="text-align:center; margin-top:10px; font-weight:bold; color:var(--gold); font-size:18px;" id="grandTotalLabel">TOTAL: $0</div></div>
     <button class="btn btn-wa-action" onclick="sendWhatsApp()">📱 SEND WHATSAPP</button>
-    <button class="btn btn-gold" style="width:100%; margin-top:15px;" onclick="saveSale()">SAVE ORDER</button>
+    <button class="btn btn-gold" style="width:100%; margin-top:15px;" onclick="saveSale()">SAVE</button>
     <button class="btn" style="width:100%; color:#666;" onclick="closeModal('saleModal')">CANCEL</button>
 </div></div>
 
@@ -154,8 +154,31 @@ function closeModal(id) { document.getElementById(id).style.display = "none"; }
 function syncPhoneToWA(val) { document.getElementById('sWhatsApp').value = val; updateReceipt(); }
 function lookupClient(phone) { const c = bizData.clients.find(x => x.phone === phone); if(c) { document.getElementById('sClient').value = c.name; document.getElementById('sAddress').value = c.address; document.getElementById('sWhatsApp').value = c.whatsapp || c.phone; updateReceipt(); } }
 function syncClientFromOrder() { const p = document.getElementById('sPhone').value; if(!p) return; if(!bizData.clients) bizData.clients = []; let idx = bizData.clients.findIndex(c => c.phone === p); const obj = { phone: p, name: document.getElementById('sClient').value, address: document.getElementById('sAddress').value, whatsapp: document.getElementById('sWhatsApp').value }; if(idx > -1) bizData.clients[idx] = obj; else bizData.clients.push(obj); }
-function renderClients() { const container = document.getElementById('clientListBody'); if(!bizData.clients.length) { container.innerHTML = '<tr><td colspan="3" style="text-align:center;">NO CLIENTS</td></tr>'; return; } container.innerHTML = bizData.clients.map(c => `<tr><td>${c.phone}</td><td>${c.name}</td><td class="btn-grp"><button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button></td></tr>`).join(""); }
+
+// AUTHORIZED CLIENT EDIT/DELETE BUTTONS
+function renderClients() { 
+    const container = document.getElementById('clientListBody'); 
+    if(!bizData.clients || !bizData.clients.length) { container.innerHTML = '<tr><td colspan="3" style="text-align:center;">NO CLIENTS</td></tr>'; return; } 
+    container.innerHTML = bizData.clients.map(c => `<tr><td>${c.phone}</td><td>${c.name}</td><td class="btn-grp">
+        <button class="btn-sm" style="background:var(--gold); color:#000;" onclick="editClient('${c.phone}')">EDIT</button>
+        <button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button>
+    </td></tr>`).join(""); 
+}
+
 function deleteClient(p) { if(confirm("DELETE CLIENT?")) { bizData.clients = bizData.clients.filter(c => c.phone !== p); save(); renderClients(); } }
+
+function editClient(p) {
+    const c = bizData.clients.find(x => x.phone === p);
+    if(c) {
+        closeModal('clientListModal');
+        openModal('saleModal');
+        document.getElementById('sPhone').value = c.phone;
+        document.getElementById('sClient').value = c.name;
+        document.getElementById('sAddress').value = c.address;
+        document.getElementById('sWhatsApp').value = c.whatsapp || c.phone;
+        updateReceipt();
+    }
+}
 
 function saveSale() {
     if (isSaving) return;
@@ -259,8 +282,6 @@ function editTx(id) {
 
 function render() {
     const today = getPVDate();
-    
-    // AUTHORIZED LOGO DISPLAY FIX
     const imgEl = document.getElementById('mainLogo');
     const labelEl = document.getElementById('logoLabel');
     if(bizData.logo) { imgEl.src = bizData.logo; imgEl.style.display = 'block'; labelEl.style.display = 'none'; } 
