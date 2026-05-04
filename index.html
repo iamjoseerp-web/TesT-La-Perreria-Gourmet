@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Perrería Gourmet PV – Version 11.2 (LOCKED)</title>
+<title>La Perrería Gourmet PV – Version 11.3 (LOCKED)</title>
 <style>
   :root { --gold: #d4af37; --bg: #000000; --card-bg: #111111; --text: #ffffff; --danger: #ff4444; --success: #25D366; --pending: #ffcc00; --blue: #3498db; }
   body { margin:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 150px; }
@@ -11,11 +11,12 @@
   .logo-upload-zone { cursor: pointer; max-width: 200px; margin: auto; border: 2px dashed var(--gold); padding: 15px; border-radius: 15px; }
   #mainLogo { max-height: 100px; max-width: 100%; display: block; margin: auto; }
   main { padding:20px; max-width:1100px; margin:auto; }
-  .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 25px; }
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 25px; }
   .stat-card { background: var(--card-bg); border: 1px solid #333; padding: 12px; border-radius: 8px; border-left: 4px solid var(--gold); }
   .stat-card.delivery { border-left-color: var(--blue); }
   .stat-card.free-gift { border-left-color: #555; }
   .stat-card.kilos-sold { border-left-color: #ff8c00; }
+  .stat-card.batch-stat { border-left-color: var(--success); }
   .stat-label { font-size: 8px; color: var(--gold); text-transform: uppercase; font-weight: 900; }
   .stat-val { font-size: 16px; font-weight: 700; color: #fff; margin-top: 4px; }
   .action-bar { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
@@ -58,9 +59,12 @@
     <div class="stat-card kilos-sold"><div class="stat-label">Kilos Sold Today</div><div id="kiloSoldDay" class="stat-val">0.0 kg</div></div>
     <div class="stat-card"><div class="stat-label">Gizzards</div><div id="gizVal" class="stat-val">0g</div></div>
     <div class="stat-card"><div class="stat-label">Feet</div><div id="feetVal" class="stat-val">0g</div></div>
-    <div class="stat-card"><div class="stat-label">Revenue</div><div id="todaySales" class="stat-val">$0 MXN</div></div>
-    <div class="stat-card delivery"><div class="stat-label">Delivery</div><div id="deliverySales" class="stat-val">$0 MXN</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue (Today)</div><div id="todaySales" class="stat-val">$0 MXN</div></div>
+    <div class="stat-card delivery"><div class="stat-label">Delivery (Today)</div><div id="deliverySales" class="stat-val">$0 MXN</div></div>
     <div class="stat-card free-gift"><div class="stat-label">Free/Gifts</div><div id="freeStat" class="stat-val">0 units</div></div>
+    <!-- AUTHORIZED NEW CARDS -->
+    <div class="stat-card batch-stat"><div class="stat-label">Batch Revenue</div><div id="batchRev" class="stat-val">$0 MXN</div></div>
+    <div class="stat-card batch-stat"><div class="stat-label">Batch Delivery</div><div id="batchDel" class="stat-val">$0 MXN</div></div>
   </div>
 
   <div class="action-bar">
@@ -83,7 +87,7 @@
   </div>
 </main>
 
-<footer>LA PERRERÍA GOURMET PV – V11.2 (LOCKED)</footer>
+<footer>LA PERRERÍA GOURMET PV – V11.3 (LOCKED)</footer>
 
 <!-- MODALS -->
 <div id="saleModal" class="modal"><div class="sheet">
@@ -155,7 +159,6 @@ function syncPhoneToWA(val) { document.getElementById('sWhatsApp').value = val; 
 function lookupClient(phone) { const c = bizData.clients.find(x => x.phone === phone); if(c) { document.getElementById('sClient').value = c.name; document.getElementById('sAddress').value = c.address; document.getElementById('sWhatsApp').value = c.whatsapp || c.phone; updateReceipt(); } }
 function syncClientFromOrder() { const p = document.getElementById('sPhone').value; if(!p) return; if(!bizData.clients) bizData.clients = []; let idx = bizData.clients.findIndex(c => c.phone === p); const obj = { phone: p, name: document.getElementById('sClient').value, address: document.getElementById('sAddress').value, whatsapp: document.getElementById('sWhatsApp').value }; if(idx > -1) bizData.clients[idx] = obj; else bizData.clients.push(obj); }
 
-// AUTHORIZED CLIENT EDIT/DELETE BUTTONS
 function renderClients() { 
     const container = document.getElementById('clientListBody'); 
     if(!bizData.clients || !bizData.clients.length) { container.innerHTML = '<tr><td colspan="3" style="text-align:center;">NO CLIENTS</td></tr>'; return; } 
@@ -169,15 +172,7 @@ function deleteClient(p) { if(confirm("DELETE CLIENT?")) { bizData.clients = biz
 
 function editClient(p) {
     const c = bizData.clients.find(x => x.phone === p);
-    if(c) {
-        closeModal('clientListModal');
-        openModal('saleModal');
-        document.getElementById('sPhone').value = c.phone;
-        document.getElementById('sClient').value = c.name;
-        document.getElementById('sAddress').value = c.address;
-        document.getElementById('sWhatsApp').value = c.whatsapp || c.phone;
-        updateReceipt();
-    }
+    if(c) { closeModal('clientListModal'); openModal('saleModal'); document.getElementById('sPhone').value = c.phone; document.getElementById('sClient').value = c.name; document.getElementById('sAddress').value = c.address; document.getElementById('sWhatsApp').value = c.whatsapp || c.phone; updateReceipt(); }
 }
 
 function saveSale() {
@@ -191,37 +186,17 @@ function saveSale() {
         const d = parseFloat(document.getElementById('sDelivery').value) || 0;
         const txId = idInput ? parseInt(idInput) : Date.now();
         const tx = { 
-            id: txId, 
-            date: document.getElementById('sDate').value, 
-            type: 'SALE', 
-            client: document.getElementById('sClient').value || "Unknown", 
-            product: document.getElementById('sProd').value, 
-            phone: document.getElementById('sWhatsApp').value, 
-            account: document.getElementById('sPhone').value, 
-            address: document.getElementById('sAddress').value, 
-            kilos: k, 
-            pricePerKg: p, 
-            delFee: d, 
-            status: 'PENDING', 
-            total: (k * p) + d 
+            id: txId, date: document.getElementById('sDate').value, type: 'SALE', client: document.getElementById('sClient').value || "Unknown", product: document.getElementById('sProd').value, phone: document.getElementById('sWhatsApp').value, account: document.getElementById('sPhone').value, address: document.getElementById('sAddress').value, kilos: k, pricePerKg: p, delFee: d, status: 'PENDING', total: (k * p) + d 
         };
         if (viewBatchId) {
             const b = bizData.batchHistory.find(x => x.id === viewBatchId);
-            if (b) {
-                let i = b.txs.findIndex(x => x.id === txId);
-                if (i > -1) b.txs[i] = tx; else b.txs.push(tx);
-            }
+            if (b) { let i = b.txs.findIndex(x => x.id === txId); if (i > -1) b.txs[i] = tx; else b.txs.push(tx); }
         } else {
             let i = bizData.transactions.findIndex(x => x.id === txId);
             if (i > -1) bizData.transactions[i] = tx; else bizData.transactions.push(tx);
         }
-        save();
-        closeModal('saleModal');
-    } catch (err) {
-        console.error("Save failed:", err);
-    } finally {
-        isSaving = false;
-    }
+        save(); closeModal('saleModal');
+    } catch (err) { console.error("Save failed:", err); } finally { isSaving = false; }
 }
 
 function updateReceipt() {
@@ -288,6 +263,16 @@ function render() {
     else { imgEl.style.display = 'none'; labelEl.style.display = 'block'; }
 
     let s_chicken = 0, s_giz = 0, s_feet = 0, pRev = 0, dRev = 0, fCount = 0, kSoldToday = 0;
+    let runBatchRev = 0, runBatchDel = 0;
+
+    // ACTIVE BATCH TOTALS
+    bizData.transactions.forEach(t => {
+      if(t.type === 'SALE') {
+        runBatchRev += (t.total - t.delFee);
+        runBatchDel += t.delFee;
+      }
+    });
+
     const targetTxs = viewBatchId ? bizData.batchHistory.find(b => b.id === viewBatchId).txs : bizData.transactions;
     const sortedTxs = [...targetTxs].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 
@@ -308,6 +293,11 @@ function render() {
     document.getElementById('todaySales').innerText = '$' + pRev.toFixed(0) + ' MXN';
     document.getElementById('deliverySales').innerText = '$' + dRev.toFixed(0) + ' MXN';
     document.getElementById('freeStat').innerText = fCount.toFixed(1) + ' units';
+    
+    // UPDATE AUTHORIZED BATCH CARDS
+    document.getElementById('batchRev').innerText = '$' + runBatchRev.toFixed(0) + ' MXN';
+    document.getElementById('batchDel').innerText = '$' + runBatchDel.toFixed(0) + ' MXN';
+    
     renderBatchHistory();
 }
 
