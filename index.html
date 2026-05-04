@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Perrería Gourmet PV – Version 11.0 (LOCKED)</title>
+<title>La Perrería Gourmet PV – Version 11.1 (LOCKED)</title>
 <style>
   :root { --gold: #d4af37; --bg: #000000; --card-bg: #111111; --text: #ffffff; --danger: #ff4444; --success: #25D366; --pending: #ffcc00; --blue: #3498db; }
   body { margin:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 150px; }
@@ -83,9 +83,9 @@
   </div>
 </main>
 
-<footer>LA PERRERÍA GOURMET PV – V11.0 (LOCKED)</footer>
+<footer>LA PERRERÍA GOURMET PV – V11.1 (LOCKED)</footer>
 
-<!-- MODALS SAME AS BEFORE -->
+<!-- MODALS -->
 <div id="saleModal" class="modal"><div class="sheet">
     <h2 style="color:var(--gold); margin:0;">NEW ORDER</h2>
     <input type="hidden" id="editSId">
@@ -259,10 +259,15 @@ function editTx(id) {
 
 function render() {
     const today = getPVDate();
+    
+    // AUTHORIZED LOGO DISPLAY FIX
+    const imgEl = document.getElementById('mainLogo');
+    const labelEl = document.getElementById('logoLabel');
+    if(bizData.logo) { imgEl.src = bizData.logo; imgEl.style.display = 'block'; labelEl.style.display = 'none'; } 
+    else { imgEl.style.display = 'none'; labelEl.style.display = 'block'; }
+
     let s_chicken = 0, s_giz = 0, s_feet = 0, pRev = 0, dRev = 0, fCount = 0, kSoldToday = 0;
     const targetTxs = viewBatchId ? bizData.batchHistory.find(b => b.id === viewBatchId).txs : bizData.transactions;
-    
-    // SORTING LOGIC: Most recent date at top
     const sortedTxs = [...targetTxs].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 
     document.getElementById('ledgerBody').innerHTML = sortedTxs.map(t => {
@@ -287,9 +292,7 @@ function render() {
 
 function renderBatchHistory() {
     if(!bizData.batchHistory) bizData.batchHistory = [];
-    // SORTING LOGIC: Most recent batch (by open date) at top
     const sortedBatches = [...bizData.batchHistory].sort((a, b) => new Date(b.opened) - new Date(a.opened) || b.id - a.id);
-
     document.getElementById('batchHistoryBody').innerHTML = sortedBatches.map(b => {
         let rev = 0, exp = 0, soldK = 0; b.txs.forEach(t => { if(t.type === 'SALE') { rev += t.total; if(t.product === "CHICKEN") soldK += t.kilos; } else { exp += Math.abs(t.total); } });
         return `<tr><td>${b.opened}</td><td>${soldK.toFixed(1)}</td><td>$${rev.toFixed(0)}</td><td>$${(rev-exp).toFixed(0)}</td><td class="btn-grp"><button class="btn-sm" style="background:#222; color:var(--gold);" onclick="editBatch(${b.id})">EDIT</button><button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteBatch(${b.id})">DEL</button></td></tr>`;
@@ -299,12 +302,7 @@ function renderBatchHistory() {
 function editBatch(id) { viewBatchId = id; document.getElementById('ledgerTitle').innerText = "ARCHIVED BATCH LEDGER (" + id + ")"; document.getElementById('backToActiveBtn').style.display = "block"; render(); }
 function viewActiveBatch() { viewBatchId = null; document.getElementById('ledgerTitle').innerText = "ACTIVE BATCH LEDGER"; document.getElementById('backToActiveBtn').style.display = "none"; render(); }
 function deleteBatch(id) { if(confirm("DELETE BATCH?")) { bizData.batchHistory = bizData.batchHistory.filter(b => b.id !== id); save(); } }
-
-function closeBatch() {
-    if(bizData.transactions.length === 0) return;
-    if(confirm("CLOSE BATCH?")) { bizData.batchHistory.push({ id: Date.now(), opened: getPVDate(), txs: bizData.transactions }); bizData.transactions = []; save(); }
-}
-
+function closeBatch() { if(bizData.transactions.length === 0) return; if(confirm("CLOSE BATCH?")) { bizData.batchHistory.push({ id: Date.now(), opened: getPVDate(), txs: bizData.transactions }); bizData.transactions = []; save(); } }
 function uploadLogo(e) { const reader = new FileReader(); reader.onload = function() { bizData.logo = reader.result; save(); }; reader.readAsDataURL(e.target.files[0]); }
 function toggleStatus(id) { let list = viewBatchId ? bizData.batchHistory.find(x => x.id === viewBatchId).txs : bizData.transactions; let tx = list.find(t => t.id === id); if(tx && tx.type === 'SALE') { tx.status = (tx.status === 'COMPLETED') ? 'PENDING' : 'COMPLETED'; save(); } }
 
