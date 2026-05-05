@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Perrería Gourmet PV – Version 11.6 (LOCKED)</title>
+<title>La Perrería Gourmet PV – Version 11.7 (LOCKED)</title>
 <style>
   :root { --gold: #d4af37; --bg: #000000; --card-bg: #111111; --text: #ffffff; --danger: #ff4444; --success: #25D366; --pending: #ffcc00; --blue: #3498db; }
   body { margin:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 150px; }
@@ -86,15 +86,15 @@
   </div>
 </main>
 
-<footer>LA PERRERÍA GOURMET PV – V11.6 (LOCKED)</footer>
+<footer>LA PERRERÍA GOURMET PV – V11.7 (LOCKED)</footer>
 
 <!-- MODALS -->
 <div id="saleModal" class="modal"><div class="sheet">
     <h2 style="color:var(--gold); margin:0;">ORDER / CLIENT EDITOR</h2>
     <input type="hidden" id="editSId">
     <label>Date</label><input id="sDate" type="date">
-    <label>Telephone (Account #)</label><input id="sPhone" oninput="syncPhoneToWA(this.value); lookupClient(this.value)">
-    <label>Client Name</label><input id="sClient" oninput="updateReceipt()">
+    <label>Telephone (Account #)</label><input id="sPhone" oninput="syncPhoneToWA(this.value); lookupClientByPhone(this.value)">
+    <label>Client Name</label><input id="sClient" oninput="lookupClientByName(this.value); updateReceipt()">
     <label>Address</label><input id="sAddress" oninput="updateReceipt()">
     <label>WhatsApp Number</label><input id="sWhatsApp" oninput="updateReceipt()">
     <label>Product</label><select id="sProd" onchange="syncUnits('sProd','sUnitLabel'); updateReceipt()"><option value="CHICKEN">CHICKEN (MAIN)</option><option value="GIZZARDS">GIZZARDS</option><option value="FEET">FEET</option></select>
@@ -157,18 +157,31 @@ function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
 function syncPhoneToWA(val) { document.getElementById('sWhatsApp').value = val; updateReceipt(); }
 
-function lookupClient(phone) { 
-    if(!bizData.clients) return;
+// Primary Phone Lookup
+function lookupClientByPhone(phone) { 
+    if(!bizData.clients || !phone) return;
     const c = bizData.clients.find(x => x.phone === phone); 
-    if(c) { 
-        document.getElementById('sClient').value = c.name; 
-        document.getElementById('sAddress').value = c.address; 
-        document.getElementById('sWhatsApp').value = c.whatsapp || c.phone; 
-        updateReceipt(); 
-    } 
+    if(c) { fillForm(c); } 
 }
 
-// FIX: Strict update-or-create logic based on Phone number to prevent duplicates and ensure saving
+// EXCEPTION FIX: New Name-based Lookup
+function lookupClientByName(name) {
+    if(!bizData.clients || !name || name.length < 2) return;
+    // Only trigger name lookup if Phone field is empty
+    if(document.getElementById('sPhone').value === "") {
+        const c = bizData.clients.find(x => x.name.toLowerCase() === name.toLowerCase());
+        if(c) { fillForm(c); }
+    }
+}
+
+function fillForm(c) {
+    document.getElementById('sPhone').value = c.phone || "";
+    document.getElementById('sClient').value = c.name || ""; 
+    document.getElementById('sAddress').value = c.address || ""; 
+    document.getElementById('sWhatsApp').value = c.whatsapp || c.phone || ""; 
+    updateReceipt();
+}
+
 function syncClientFromOrder() { 
     const p = document.getElementById('sPhone').value.trim(); 
     if(!p) return; 
@@ -180,17 +193,13 @@ function syncClientFromOrder() {
         whatsapp: document.getElementById('sWhatsApp').value 
     }; 
     const existingIndex = bizData.clients.findIndex(c => c.phone === p); 
-    if(existingIndex > -1) {
-        bizData.clients[existingIndex] = updatedClient; // Correctly updates existing instead of duplicating
-    } else {
-        bizData.clients.push(updatedClient); // Only creates new if phone doesn't exist
-    }
+    if(existingIndex > -1) { bizData.clients[existingIndex] = updatedClient; } 
+    else { bizData.clients.push(updatedClient); }
 }
 
 function renderClients() { 
     const container = document.getElementById('clientListBody'); 
     if(!bizData.clients || !bizData.clients.length) { container.innerHTML = '<tr><td colspan="3" style="text-align:center;">NO CLIENTS</td></tr>'; return; } 
-    // Sorted alphabetically for easier management
     const sorted = [...bizData.clients].sort((a,b) => a.name.localeCompare(b.name));
     container.innerHTML = sorted.map(c => `<tr><td>${c.phone}</td><td>${c.name}</td><td class="btn-grp">
         <button class="btn-sm" style="background:var(--gold); color:#000;" onclick="editClient('${c.phone}')">EDIT</button>
@@ -202,23 +211,14 @@ function deleteClient(p) { if(confirm("DELETE CLIENT?")) { bizData.clients = biz
 
 function editClient(p) {
     const c = bizData.clients.find(x => x.phone === p);
-    if(c) { 
-        closeModal('clientListModal'); 
-        openModal('saleModal'); 
-        // Populate form with existing client data to allow editing
-        document.getElementById('sPhone').value = c.phone; 
-        document.getElementById('sClient').value = c.name; 
-        document.getElementById('sAddress').value = c.address; 
-        document.getElementById('sWhatsApp').value = c.whatsapp || c.phone; 
-        updateReceipt(); 
-    }
+    if(c) { closeModal('clientListModal'); openModal('saleModal'); fillForm(c); }
 }
 
 function saveSale() {
     if (isSaving) return;
     isSaving = true;
     try {
-        syncClientFromOrder(); // Force update/sync to database before saving order
+        syncClientFromOrder();
         const idInput = document.getElementById('editSId').value;
         const k = parseFloat(document.getElementById('sKilos').value) || 0;
         const p = parseFloat(document.getElementById('sPrice').value) || 0;
