@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Perrería Gourmet PV – Version 11.7 (LOCKED)</title>
+<title>La Perrería Gourmet PV – Version 11.8 (LOCKED)</title>
 <style>
   :root { --gold: #d4af37; --bg: #000000; --card-bg: #111111; --text: #ffffff; --danger: #ff4444; --success: #25D366; --pending: #ffcc00; --blue: #3498db; }
   body { margin:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 150px; }
@@ -86,7 +86,7 @@
   </div>
 </main>
 
-<footer>LA PERRERÍA GOURMET PV – V11.7 (LOCKED)</footer>
+<footer>LA PERRERÍA GOURMET PV – V11.8 (LOCKED)</footer>
 
 <!-- MODALS -->
 <div id="saleModal" class="modal"><div class="sheet">
@@ -94,7 +94,12 @@
     <input type="hidden" id="editSId">
     <label>Date</label><input id="sDate" type="date">
     <label>Telephone (Account #)</label><input id="sPhone" oninput="syncPhoneToWA(this.value); lookupClientByPhone(this.value)">
-    <label>Client Name</label><input id="sClient" oninput="lookupClientByName(this.value); updateReceipt()">
+    
+    <!-- EXCEPTION FIX: Added list="clientNames" for autocomplete functionality -->
+    <label>Client Name</label>
+    <input id="sClient" list="clientNames" oninput="lookupClientByName(this.value); updateReceipt()" autocomplete="off">
+    <datalist id="clientNames"></datalist>
+    
     <label>Address</label><input id="sAddress" oninput="updateReceipt()">
     <label>WhatsApp Number</label><input id="sWhatsApp" oninput="updateReceipt()">
     <label>Product</label><select id="sProd" onchange="syncUnits('sProd','sUnitLabel'); updateReceipt()"><option value="CHICKEN">CHICKEN (MAIN)</option><option value="GIZZARDS">GIZZARDS</option><option value="FEET">FEET</option></select>
@@ -142,11 +147,22 @@ let viewBatchId = null;
 let isSaving = false;
 
 function getPVDate() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bahia_Banderas', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
-function save() { localStorage.setItem("perreria_v10", JSON.stringify(bizData)); render(); }
+function save() { localStorage.setItem("perreria_v10", JSON.stringify(bizData)); updateDatalist(); render(); }
 function syncUnits(selectId, labelId) { const val = document.getElementById(selectId).value; document.getElementById(labelId).innerText = (val === "CHICKEN") ? "Qty (kg)" : "Qty (g)"; }
+
+// EXCEPTION FIX: Function to keep autocomplete list synced with database
+function updateDatalist() {
+    const list = document.getElementById('clientNames');
+    if (!list || !bizData.clients) return;
+    list.innerHTML = bizData.clients.map(c => `<option value="${c.name}">`).join("");
+}
+
 function openModal(id) { 
     const d = getPVDate();
-    if(id === 'saleModal') { document.getElementById('editSId').value = ""; document.getElementById('sPhone').value = ""; document.getElementById('sClient').value = ""; document.getElementById('sWhatsApp').value = ""; document.getElementById('sAddress').value = ""; document.getElementById('sKilos').value = 0; document.getElementById('sPrice').value = 50; document.getElementById('sDelivery').value = 10; updateReceipt(); }
+    if(id === 'saleModal') { 
+        updateDatalist();
+        document.getElementById('editSId').value = ""; document.getElementById('sPhone').value = ""; document.getElementById('sClient').value = ""; document.getElementById('sWhatsApp').value = ""; document.getElementById('sAddress').value = ""; document.getElementById('sKilos').value = 0; document.getElementById('sPrice').value = 50; document.getElementById('sDelivery').value = 10; updateReceipt(); 
+    }
     if(id === 'stockModal') { document.getElementById('editStId').value = ""; document.getElementById('stSupplier').value = ""; document.getElementById('stKilos').value = 0; document.getElementById('stCost').value = 0; }
     if(id === 'expenseModal') { document.getElementById('editExId').value = ""; document.getElementById('exNote').value = ""; document.getElementById('exCost').value = 0; document.getElementById('exKilos').value = 0; }
     if(id === 'clientListModal') { renderClients(); }
@@ -164,14 +180,13 @@ function lookupClientByPhone(phone) {
     if(c) { fillForm(c); } 
 }
 
-// EXCEPTION FIX: New Name-based Lookup
+// EXCEPTION FIX: Enhanced Name-based Lookup for Autocomplete selection
 function lookupClientByName(name) {
-    if(!bizData.clients || !name || name.length < 2) return;
-    // Only trigger name lookup if Phone field is empty
-    if(document.getElementById('sPhone').value === "") {
-        const c = bizData.clients.find(x => x.name.toLowerCase() === name.toLowerCase());
-        if(c) { fillForm(c); }
-    }
+    if(!bizData.clients || !name) return;
+    // When a user selects a name from the dropdown or finishes typing, 
+    // it performs a match to populate the other fields.
+    const c = bizData.clients.find(x => x.name.toLowerCase() === name.toLowerCase());
+    if(c) { fillForm(c); }
 }
 
 function fillForm(c) {
@@ -353,6 +368,7 @@ function uploadLogo(e) { const reader = new FileReader(); reader.onload = functi
 function toggleStatus(id) { let list = viewBatchId ? bizData.batchHistory.find(x => x.id === viewBatchId).txs : bizData.transactions; let tx = list.find(t => t.id === id); if(tx && tx.type === 'SALE') { tx.status = (tx.status === 'COMPLETED') ? 'PENDING' : 'COMPLETED'; save(); } }
 
 render();
+updateDatalist();
 </script>
 </body>
 </html>
