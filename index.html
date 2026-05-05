@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Perrería Gourmet PV – Version 11.9 (LOCKED)</title>
+<title>La Perrería Gourmet PV – Version 12.0 (BACKUP RESTORED)</title>
 <style>
   :root { --gold: #d4af37; --bg: #000000; --card-bg: #111111; --text: #ffffff; --danger: #ff4444; --success: #25D366; --pending: #ffcc00; --blue: #3498db; }
   body { margin:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 150px; }
@@ -41,6 +41,7 @@
   input, select { width: 100%; padding: 12px; margin: 5px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
   footer { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 1px solid #333; padding: 15px; text-align: center; color: var(--gold); font-size: 11px; font-weight: bold; }
   .btn-grp { display: flex; gap: 5px; }
+  .backup-zone { border-top: 1px solid #333; margin-top: 20px; padding-top: 15px; }
 </style>
 </head>
 <body>
@@ -70,7 +71,7 @@
     <button class="btn btn-gold" onclick="openModal('saleModal')">New Order</button>
     <button class="btn btn-outline" onclick="openModal('stockModal')">+ Stock</button>
     <button class="btn btn-danger-action" onclick="openModal('expenseModal')">+ Expense / Loss</button>
-    <button class="btn" style="background:#ff8c00; color:#000;" onclick="openModal('clientListModal')">👥 Clients</button>
+    <button class="btn" style="background:#ff8c00; color:#000;" onclick="openModal('clientListModal')">👥 Clients / Backup</button>
     <button class="btn" style="background:#440000; color:var(--gold); border:1px solid var(--danger);" onclick="closeBatch()">Close Batch</button>
   </div>
 
@@ -86,7 +87,7 @@
   </div>
 </main>
 
-<footer>LA PERRERÍA GOURMET PV – V11.9 (LOCKED)</footer>
+<footer>LA PERRERÍA GOURMET PV – V12.0 (LOCKED)</footer>
 
 <!-- MODALS -->
 <div id="saleModal" class="modal"><div class="sheet">
@@ -94,11 +95,9 @@
     <input type="hidden" id="editSId">
     <label>Date</label><input id="sDate" type="date">
     <label>Telephone (Account #)</label><input id="sPhone" oninput="syncPhoneToWA(this.value); lookupClientByPhone(this.value)">
-    
     <label>Client Name</label>
     <input id="sClient" list="clientNames" oninput="lookupClientByName(this.value); updateReceipt()" autocomplete="off">
     <datalist id="clientNames"></datalist>
-    
     <label>Address</label><input id="sAddress" oninput="updateReceipt()">
     <label>WhatsApp Number</label><input id="sWhatsApp" oninput="updateReceipt()">
     <label>Product</label><select id="sProd" onchange="syncUnits('sProd','sUnitLabel'); updateReceipt()"><option value="CHICKEN">CHICKEN (MAIN)</option><option value="GIZZARDS">GIZZARDS</option><option value="FEET">FEET</option></select>
@@ -109,6 +108,25 @@
     <button class="btn" style="width:100%; color:#666;" onclick="closeModal('saleModal')">CANCEL</button>
 </div></div>
 
+<div id="clientListModal" class="modal"><div class="sheet">
+    <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
+    <div style="margin-top: 15px; border: 1px solid #333; border-radius: 8px; background: #000; max-height: 300px; overflow-y: auto;"><table><thead><tr><th>Phone</th><th>Name</th><th>Actions</th></tr></thead><tbody id="clientListBody"></tbody></table></div>
+    
+    <!-- RESTORED BACKUP ZONE -->
+    <div class="backup-zone">
+        <label style="margin-bottom:10px;">SYSTEM BACKUP & RESTORE</label>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-outline" style="flex:1;" onclick="exportData()">EXPORT BACKUP</button>
+            <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('importFile').click()">IMPORT BACKUP</button>
+        </div>
+        <input type="file" id="importFile" hidden accept=".json" onchange="importData(event)">
+        <p style="font-size:9px; color:#666; margin-top:10px; text-align:center;">Use Export to save all client and batch data. Use Import to restore it on another device.</p>
+    </div>
+
+    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="closeModal('clientListModal')">CLOSE</button>
+</div></div>
+
+<!-- OTHER MODALS (Stock/Expense) REMAIN UNCHANGED -->
 <div id="stockModal" class="modal"><div class="sheet">
     <h2 style="color:var(--gold); margin:0;">ADD STOCK</h2>
     <input type="hidden" id="editStId">
@@ -134,12 +152,6 @@
     <button class="btn" style="width:100%; color:#666;" onclick="closeModal('expenseModal')">CANCEL</button>
 </div></div>
 
-<div id="clientListModal" class="modal"><div class="sheet">
-    <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
-    <div style="margin-top: 15px; border: 1px solid #333; border-radius: 8px; background: #000; max-height: 400px; overflow-y: auto;"><table><thead><tr><th>Phone</th><th>Name</th><th>Actions</th></tr></thead><tbody id="clientListBody"></tbody></table></div>
-    <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="closeModal('clientListModal')">CLOSE</button>
-</div></div>
-
 <script>
 let bizData = JSON.parse(localStorage.getItem("perreria_v10") || '{"transactions":[], "logo": null, "batchHistory": [], "clients": []}');
 let viewBatchId = null;
@@ -149,7 +161,38 @@ function getPVDate() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Amer
 function save() { localStorage.setItem("perreria_v10", JSON.stringify(bizData)); updateDatalist(); render(); }
 function syncUnits(selectId, labelId) { const val = document.getElementById(selectId).value; document.getElementById(labelId).innerText = (val === "CHICKEN") ? "Qty (kg)" : "Qty (g)"; }
 
-// EXCEPTION FIX: Updated to Alphabetical Sorting
+// RESTORED: Export Whole Application Data
+function exportData() {
+    const dataStr = JSON.stringify(bizData, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `la_perreria_backup_${getPVDate()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+// RESTORED: Import and Restore Whole Application State
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (imported.transactions && imported.clients) {
+                if (confirm("RESTORE BACKUP? This will overwrite your current data with the backup file.")) {
+                    bizData = imported;
+                    save();
+                    location.reload();
+                }
+            } else { alert("Invalid backup file."); }
+        } catch (err) { alert("Error reading file."); }
+    };
+    reader.readAsText(file);
+}
+
 function updateDatalist() {
     const list = document.getElementById('clientNames');
     if (!list || !bizData.clients) return;
@@ -172,59 +215,28 @@ function openModal(id) {
 function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
 function syncPhoneToWA(val) { document.getElementById('sWhatsApp').value = val; updateReceipt(); }
-
-function lookupClientByPhone(phone) { 
-    if(!bizData.clients || !phone) return;
-    const c = bizData.clients.find(x => x.phone === phone); 
-    if(c) { fillForm(c); } 
-}
-
-function lookupClientByName(name) {
-    if(!bizData.clients || !name) return;
-    const c = bizData.clients.find(x => x.name.toLowerCase() === name.toLowerCase());
-    if(c) { fillForm(c); }
-}
-
-function fillForm(c) {
-    document.getElementById('sPhone').value = c.phone || "";
-    document.getElementById('sClient').value = c.name || ""; 
-    document.getElementById('sAddress').value = c.address || ""; 
-    document.getElementById('sWhatsApp').value = c.whatsapp || c.phone || ""; 
-    updateReceipt();
-}
+function lookupClientByPhone(phone) { if(!bizData.clients || !phone) return; const c = bizData.clients.find(x => x.phone === phone); if(c) fillForm(c); }
+function lookupClientByName(name) { if(!bizData.clients || !name) return; const c = bizData.clients.find(x => x.name.toLowerCase() === name.toLowerCase()); if(c) fillForm(c); }
+function fillForm(c) { document.getElementById('sPhone').value = c.phone || ""; document.getElementById('sClient').value = c.name || ""; document.getElementById('sAddress').value = c.address || ""; document.getElementById('sWhatsApp').value = c.whatsapp || c.phone || ""; updateReceipt(); }
 
 function syncClientFromOrder() { 
     const p = document.getElementById('sPhone').value.trim(); 
     if(!p) return; 
     if(!bizData.clients) bizData.clients = []; 
-    const updatedClient = { 
-        phone: p, 
-        name: document.getElementById('sClient').value, 
-        address: document.getElementById('sAddress').value, 
-        whatsapp: document.getElementById('sWhatsApp').value 
-    }; 
+    const updatedClient = { phone: p, name: document.getElementById('sClient').value, address: document.getElementById('sAddress').value, whatsapp: document.getElementById('sWhatsApp').value }; 
     const existingIndex = bizData.clients.findIndex(c => c.phone === p); 
-    if(existingIndex > -1) { bizData.clients[existingIndex] = updatedClient; } 
-    else { bizData.clients.push(updatedClient); }
+    if(existingIndex > -1) { bizData.clients[existingIndex] = updatedClient; } else { bizData.clients.push(updatedClient); }
 }
 
-// EXCEPTION FIX: Alphabetical Sorting applied here
 function renderClients() { 
     const container = document.getElementById('clientListBody'); 
     if(!bizData.clients || !bizData.clients.length) { container.innerHTML = '<tr><td colspan="3" style="text-align:center;">NO CLIENTS</td></tr>'; return; } 
     const sorted = [...bizData.clients].sort((a,b) => a.name.localeCompare(b.name));
-    container.innerHTML = sorted.map(c => `<tr><td>${c.phone}</td><td>${c.name}</td><td class="btn-grp">
-        <button class="btn-sm" style="background:var(--gold); color:#000;" onclick="editClient('${c.phone}')">EDIT</button>
-        <button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button>
-    </td></tr>`).join(""); 
+    container.innerHTML = sorted.map(c => `<tr><td>${c.phone}</td><td>${c.name}</td><td class="btn-grp"><button class="btn-sm" style="background:var(--gold); color:#000;" onclick="editClient('${c.phone}')">EDIT</button><button class="btn-sm" style="background:#300; color:#fff;" onclick="deleteClient('${c.phone}')">DEL</button></td></tr>`).join(""); 
 }
 
 function deleteClient(p) { if(confirm("DELETE CLIENT?")) { bizData.clients = bizData.clients.filter(c => c.phone !== p); save(); renderClients(); } }
-
-function editClient(p) {
-    const c = bizData.clients.find(x => x.phone === p);
-    if(c) { closeModal('clientListModal'); openModal('saleModal'); fillForm(c); }
-}
+function editClient(p) { const c = bizData.clients.find(x => x.phone === p); if(c) { closeModal('clientListModal'); openModal('saleModal'); fillForm(c); } }
 
 function saveSale() {
     if (isSaving) return;
@@ -236,16 +248,9 @@ function saveSale() {
         const p = parseFloat(document.getElementById('sPrice').value) || 0;
         const d = parseFloat(document.getElementById('sDelivery').value) || 0;
         const txId = idInput ? parseInt(idInput) : Date.now();
-        const tx = { 
-            id: txId, date: document.getElementById('sDate').value, type: 'SALE', client: document.getElementById('sClient').value || "Unknown", product: document.getElementById('sProd').value, phone: document.getElementById('sWhatsApp').value, account: document.getElementById('sPhone').value, address: document.getElementById('sAddress').value, kilos: k, pricePerKg: p, delFee: d, status: 'PENDING', total: (k * p) + d 
-        };
-        if (viewBatchId) {
-            const b = bizData.batchHistory.find(x => x.id === viewBatchId);
-            if (b) { let i = b.txs.findIndex(x => x.id === txId); if (i > -1) b.txs[i] = tx; else b.txs.push(tx); }
-        } else {
-            let i = bizData.transactions.findIndex(x => x.id === txId);
-            if (i > -1) bizData.transactions[i] = tx; else bizData.transactions.push(tx);
-        }
+        const tx = { id: txId, date: document.getElementById('sDate').value, type: 'SALE', client: document.getElementById('sClient').value || "Unknown", product: document.getElementById('sProd').value, phone: document.getElementById('sWhatsApp').value, account: document.getElementById('sPhone').value, address: document.getElementById('sAddress').value, kilos: k, pricePerKg: p, delFee: d, status: 'PENDING', total: (k * p) + d };
+        if (viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if (b) { let i = b.txs.findIndex(x => x.id === txId); if (i > -1) b.txs[i] = tx; else b.txs.push(tx); } } 
+        else { let i = bizData.transactions.findIndex(x => x.id === txId); if (i > -1) bizData.transactions[i] = tx; else bizData.transactions.push(tx); }
         save(); closeModal('saleModal');
     } catch (err) { console.error("Save failed:", err); } finally { isSaving = false; }
 }
@@ -264,8 +269,7 @@ function sendWhatsApp() {
 }
 
 function saveStock() {
-    if (isSaving) return;
-    isSaving = true;
+    if (isSaving) return; isSaving = true;
     const id = document.getElementById('editStId').value;
     const tx = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('stDate').value, type: 'STOCK', client: document.getElementById('stSupplier').value, product: document.getElementById('stProd').value, kilos: parseFloat(document.getElementById('stKilos').value) || 0, total: -parseFloat(document.getElementById('stCost').value) || 0 };
     if(viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if(id) { let i = b.txs.findIndex(x => x.id == id); b.txs[i] = tx; } else b.txs.push(tx); }
@@ -274,8 +278,7 @@ function saveStock() {
 }
 
 function saveExpense() {
-    if (isSaving) return;
-    isSaving = true;
+    if (isSaving) return; isSaving = true;
     const id = document.getElementById('editExId').value;
     const tx = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('exDate').value, type: document.getElementById('exType').value, product: document.getElementById('exProd').value, client: document.getElementById('exNote').value, kilos: parseFloat(document.getElementById('exKilos').value) || 0, total: -parseFloat(document.getElementById('exCost').value) || 0 };
     if(viewBatchId) { const b = bizData.batchHistory.find(x => x.id === viewBatchId); if(id) { let i = b.txs.findIndex(x => x.id == id); b.txs[i] = tx; } else b.txs.push(tx); }
@@ -316,12 +319,7 @@ function render() {
     let s_chicken = 0, s_giz = 0, s_feet = 0, pRev = 0, dRev = 0, fCount = 0, kSoldToday = 0;
     let runBatchRev = 0, runBatchDel = 0;
 
-    bizData.transactions.forEach(t => {
-      if(t.type === 'SALE') {
-        runBatchRev += (t.total - t.delFee);
-        runBatchDel += t.delFee;
-      }
-    });
+    bizData.transactions.forEach(t => { if(t.type === 'SALE') { runBatchRev += (t.total - t.delFee); runBatchDel += t.delFee; } });
 
     const targetTxs = viewBatchId ? bizData.batchHistory.find(b => b.id === viewBatchId).txs : bizData.transactions;
     const sortedTxs = [...targetTxs].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
