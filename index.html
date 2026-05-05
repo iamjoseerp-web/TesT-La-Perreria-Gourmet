@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Perrería Gourmet PV – Version 11.8 (LOCKED)</title>
+<title>La Perrería Gourmet PV – Version 11.9 (LOCKED)</title>
 <style>
   :root { --gold: #d4af37; --bg: #000000; --card-bg: #111111; --text: #ffffff; --danger: #ff4444; --success: #25D366; --pending: #ffcc00; --blue: #3498db; }
   body { margin:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 150px; }
@@ -86,7 +86,7 @@
   </div>
 </main>
 
-<footer>LA PERRERÍA GOURMET PV – V11.8 (LOCKED)</footer>
+<footer>LA PERRERÍA GOURMET PV – V11.9 (LOCKED)</footer>
 
 <!-- MODALS -->
 <div id="saleModal" class="modal"><div class="sheet">
@@ -95,7 +95,6 @@
     <label>Date</label><input id="sDate" type="date">
     <label>Telephone (Account #)</label><input id="sPhone" oninput="syncPhoneToWA(this.value); lookupClientByPhone(this.value)">
     
-    <!-- EXCEPTION FIX: Added list="clientNames" for autocomplete functionality -->
     <label>Client Name</label>
     <input id="sClient" list="clientNames" oninput="lookupClientByName(this.value); updateReceipt()" autocomplete="off">
     <datalist id="clientNames"></datalist>
@@ -150,11 +149,12 @@ function getPVDate() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Amer
 function save() { localStorage.setItem("perreria_v10", JSON.stringify(bizData)); updateDatalist(); render(); }
 function syncUnits(selectId, labelId) { const val = document.getElementById(selectId).value; document.getElementById(labelId).innerText = (val === "CHICKEN") ? "Qty (kg)" : "Qty (g)"; }
 
-// EXCEPTION FIX: Function to keep autocomplete list synced with database
+// EXCEPTION FIX: Updated to Alphabetical Sorting
 function updateDatalist() {
     const list = document.getElementById('clientNames');
     if (!list || !bizData.clients) return;
-    list.innerHTML = bizData.clients.map(c => `<option value="${c.name}">`).join("");
+    const sorted = [...bizData.clients].sort((a,b) => a.name.localeCompare(b.name));
+    list.innerHTML = sorted.map(c => `<option value="${c.name}">`).join("");
 }
 
 function openModal(id) { 
@@ -173,18 +173,14 @@ function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
 function syncPhoneToWA(val) { document.getElementById('sWhatsApp').value = val; updateReceipt(); }
 
-// Primary Phone Lookup
 function lookupClientByPhone(phone) { 
     if(!bizData.clients || !phone) return;
     const c = bizData.clients.find(x => x.phone === phone); 
     if(c) { fillForm(c); } 
 }
 
-// EXCEPTION FIX: Enhanced Name-based Lookup for Autocomplete selection
 function lookupClientByName(name) {
     if(!bizData.clients || !name) return;
-    // When a user selects a name from the dropdown or finishes typing, 
-    // it performs a match to populate the other fields.
     const c = bizData.clients.find(x => x.name.toLowerCase() === name.toLowerCase());
     if(c) { fillForm(c); }
 }
@@ -212,6 +208,7 @@ function syncClientFromOrder() {
     else { bizData.clients.push(updatedClient); }
 }
 
+// EXCEPTION FIX: Alphabetical Sorting applied here
 function renderClients() { 
     const container = document.getElementById('clientListBody'); 
     if(!bizData.clients || !bizData.clients.length) { container.innerHTML = '<tr><td colspan="3" style="text-align:center;">NO CLIENTS</td></tr>'; return; } 
