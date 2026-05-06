@@ -112,21 +112,20 @@
     <h2 style="color:var(--gold); margin:0;">CLIENT DATABASE</h2>
     <div style="margin-top: 15px; border: 1px solid #333; border-radius: 8px; background: #000; max-height: 300px; overflow-y: auto;"><table><thead><tr><th>Phone</th><th>Name</th><th>Actions</th></tr></thead><tbody id="clientListBody"></tbody></table></div>
     
-    <!-- RESTORED BACKUP ZONE -->
     <div class="backup-zone">
         <label style="margin-bottom:10px;">SYSTEM BACKUP & RESTORE</label>
         <div style="display:flex; gap:10px;">
             <button class="btn btn-outline" style="flex:1;" onclick="exportData()">EXPORT BACKUP</button>
             <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('importFile').click()">IMPORT BACKUP</button>
         </div>
+        <!-- IMPORTANT: The file input -->
         <input type="file" id="importFile" hidden accept=".json" onchange="importData(event)">
-        <p style="font-size:9px; color:#666; margin-top:10px; text-align:center;">Use Export to save all client and batch data. Use Import to restore it on another device.</p>
+        <p style="font-size:9px; color:#666; margin-top:10px; text-align:center;">Use Export to save all data. Use Import to restore it.</p>
     </div>
 
     <button class="btn btn-gold" style="width:100%; margin-top:20px;" onclick="closeModal('clientListModal')">CLOSE</button>
 </div></div>
 
-<!-- OTHER MODALS (Stock/Expense) REMAIN UNCHANGED -->
 <div id="stockModal" class="modal"><div class="sheet">
     <h2 style="color:var(--gold); margin:0;">ADD STOCK</h2>
     <input type="hidden" id="editStId">
@@ -161,7 +160,6 @@ function getPVDate() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Amer
 function save() { localStorage.setItem("perreria_v10", JSON.stringify(bizData)); updateDatalist(); render(); }
 function syncUnits(selectId, labelId) { const val = document.getElementById(selectId).value; document.getElementById(labelId).innerText = (val === "CHICKEN") ? "Qty (kg)" : "Qty (g)"; }
 
-// RESTORED: Export Whole Application Data
 function exportData() {
     const dataStr = JSON.stringify(bizData, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -173,7 +171,7 @@ function exportData() {
     URL.revokeObjectURL(url);
 }
 
-// RESTORED: Import and Restore Whole Application State
+// CORRECTION APPLIED HERE
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -181,16 +179,29 @@ function importData(event) {
     reader.onload = function(e) {
         try {
             const imported = JSON.parse(e.target.result);
-            if (imported.transactions && imported.clients) {
+            // More robust check: Does it look like our data structure?
+            if (imported && (imported.transactions || imported.clients || imported.batchHistory)) {
                 if (confirm("RESTORE BACKUP? This will overwrite your current data with the backup file.")) {
-                    bizData = imported;
+                    // Ensure the structure is clean
+                    bizData = {
+                        transactions: imported.transactions || [],
+                        clients: imported.clients || [],
+                        batchHistory: imported.batchHistory || [],
+                        logo: imported.logo || null
+                    };
                     save();
                     location.reload();
                 }
-            } else { alert("Invalid backup file."); }
-        } catch (err) { alert("Error reading file."); }
+            } else { 
+                alert("Invalid backup file: The selected JSON does not contain recognized app data."); 
+            }
+        } catch (err) { 
+            alert("Error reading file: Make sure it is a valid .json file."); 
+        }
     };
     reader.readAsText(file);
+    // Reset file input so user can import the same file again if they want
+    event.target.value = '';
 }
 
 function updateDatalist() {
